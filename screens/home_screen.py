@@ -52,7 +52,7 @@ class MenuFrame(customtkinter.CTkFrame):
     def select_dir_callback(self):
         
         # init_dir='C:/Users/taval/Documents/研究/スクリプト/frames/'
-        init_dir = 'C:/project/processing_multispectral_image'
+        init_dir = 'C:/project/multispectral-app'
         if not os.path.exists(init_dir):
             init_dir = os.path.expanduser('~')
         # フォルダ選択のダイアログを開く
@@ -68,7 +68,6 @@ class MenuFrame(customtkinter.CTkFrame):
         image_8bit_list = preprocessor.bit_convert()
         self.datacube_list = preprocessor.make_datacube()
 
-        # SpectralImgFrame.convert_datacube(self.datacube_list)
         spectral_img_frame = SpectralImgFrame()
         spectral_img_frame.convert_datacube(self.datacube_list)
         
@@ -81,10 +80,15 @@ class SpectralImgFrame(customtkinter.CTkFrame):
         
     def convert_datacube(self, datacube_list):
         datacube = datacube_list[5]
-        tiff.imwrite('./aaa.tif', datacube)
         band_image = datacube[:, :, 0]
         
-        img = Image.fromarray(band_image)
-        imgtk = ImageTk.PhotoImage(image=img)
+        band_image = (band_image - np.min(band_image)) / (np.max(band_image) - np.min(band_image)) * 255
         
-        label = tk.Label(width=512, height=512, image=imgtk).grid()
+        img = Image.fromarray(np.uint8(band_image))
+        imgtk = ImageTk.PhotoImage(image=img)
+        label = tk.Label(width=512, height=512, image=imgtk)
+        # 参照を保持（ガベージコレクションを防ぐため）
+        label.image = imgtk
+        label.grid()
+        
+        

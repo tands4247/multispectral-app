@@ -29,7 +29,6 @@ class PreprocessingImages():
     def __init__(self, dir_path):
         self.dir_path = os.path.join(dir_path, 'frames', '*')
         self.images = glob.glob(self.dir_path)
-        print(self.images)
         self.image_tmp_list = []
         self.image_8bit_list = []
         for img in self.images:
