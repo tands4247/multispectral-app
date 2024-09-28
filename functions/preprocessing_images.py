@@ -29,6 +29,7 @@ class PreprocessingImages():
     def __init__(self, dir_path):
         self.dir_path = os.path.join(dir_path, 'frames', '*')
         self.images = glob.glob(self.dir_path)
+        print(self.images)
         self.image_tmp_list = []
         self.image_8bit_list = []
         for img in self.images:
@@ -41,51 +42,38 @@ class PreprocessingImages():
         return self.image_8bit_list
             
     def make_datacube(self):
+        # # datacube化
+        # self.images_tif = []
+        # self.datacube_list = []
+        # self.band_height = int(tiff.imread(self.images[0]).shape[0] / 4) # 512
+        # i = 1
+        
+        # # tiff形式で読み込み
+        # self.tif_images = []
+        # for img in self.images:
+        #     self.tif_images.append(tiff.imread(img))
+        
+        # for img in self.tif_images:
+        #     self.bands = [img[j*self.band_height:(j+1)*self.band_height, :] for j in range(4)]
+        #     self.datacube_list.append(np.stack(self.bands, axis=-1))
+        
+        # return self.datacube_list
+        
         # datacube化
+        
         self.images_tif = []
-        self.data_cube_list = []
-        self.band_height = int(tiff.imread(self.images[0]).shape[0] / 4) # 512
+        self.datacube_list = []
+        # self.band_height = int(Image.open(self.images[0]).size[1] / 4)  # 512
+        self.band_height = int(self.image_8bit_list[0].size[1] / 4)
         i = 1
-        
-        # tiff形式で読み込み
+
+        # PILを使用してtiff形式で読み込み
         self.tif_images = []
-        for img in self.images:
-            self.tif_images.append(tiff.imread(img))
-        
+        for img in self.image_8bit_list:
+            self.tif_images.append(np.array(img))  # 画像をnumpy配列に変換
+
         for img in self.tif_images:
             self.bands = [img[j*self.band_height:(j+1)*self.band_height, :] for j in range(4)]
-            self.data_cube_list.append(np.stack(self.bands, axis=-1))
-        
-        return self.data_cube_list
-        
-# def make_datacube_and_division():
-#     path_8_files = os.path.join(path_8, '*')
-#     files_8 = glob.glob(path_8_files)
+            self.datacube_list.append(np.stack(self.bands, axis=-1))
 
-#     # datacube化
-#     images_tif = []
-#     band_height = int(tiff.imread(files_8[0]).shape[0] / 4) # 512
-#     i = 1
-#     for file in files_8:
-#         tif_image = tiff.imread(file)
-#         bands = [tif_image[j*band_height:(j+1)*band_height, :] for j in range(4)]
-        
-#         img_name = os.path.basename(file)
-#         # データキューブ保存
-#         data_cube = np.stack(bands, axis=-1)
-#         save_datacube_path = os.path.join(datacube_path, img_name)
-#         tiff.imwrite(save_datacube_path, data_cube)
-        
-#         # 分割保存
-#         tiff.imwrite(os.path.join(path_normal_division_G, img_name), bands[0])
-#         tiff.imwrite(os.path.join(path_normal_division_R, img_name), bands[1])
-#         tiff.imwrite(os.path.join(path_normal_division_Re, img_name), bands[2])
-#         tiff.imwrite(os.path.join(path_normal_division_NIR, img_name), bands[3])
-
-
-# if __name__ == '__main__':
-#     make_directory()
-#     bit_convert()
-#     make_datacube_and_division()
-#     calcula_and_save_NDVImap()
-    
+        return self.datacube_list

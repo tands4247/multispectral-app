@@ -3,6 +3,9 @@ from tkinter import filedialog
 import customtkinter
 import os
 import numpy as np
+from PIL import Image, ImageTk
+import matplotlib.pyplot as plt
+import tifffile as tiff
 # 作成モジュール
 from functions.preprocessing_images import PreprocessingImages
 
@@ -20,16 +23,15 @@ class Application(customtkinter.CTk):
         
         # MenuFrameの設定
         self.menu_fram = MenuFrame().grid(row=0, column=0, padx=20, pady=20)
+        # SpectralImgFrameの設定
+        spectral_img_frame = SpectralImgFrame().grid(row=0, column=1, padx=60, pady=20)
 
 
 class MenuFrame(customtkinter.CTkFrame):
     def __init__(self, window=None):
         super().__init__(window)
-        
         self.fonts = (FONT_TYPE, 15)
-        
         self.create_widgets()
-    
     
     # フォルダ選択ボタンの配置
     def create_widgets(self):
@@ -64,6 +66,25 @@ class MenuFrame(customtkinter.CTkFrame):
         # 作成モジュールに渡す
         preprocessor = PreprocessingImages(self.select_dir_path)
         image_8bit_list = preprocessor.bit_convert()
-        data_cubes_list = preprocessor.make_datacube()
-        data_cubes_list = np.array(data_cubes_list)
-        print(data_cubes_list.shape)
+        self.datacube_list = preprocessor.make_datacube()
+
+        # SpectralImgFrame.convert_datacube(self.datacube_list)
+        spectral_img_frame = SpectralImgFrame()
+        spectral_img_frame.convert_datacube(self.datacube_list)
+        
+        
+class SpectralImgFrame(customtkinter.CTkFrame):
+    def __init__(self, window=None):
+        super().__init__(window)
+        self.fonts = (FONT_TYPE, 15)
+        # self.convert_datacube()
+        
+    def convert_datacube(self, datacube_list):
+        datacube = datacube_list[5]
+        tiff.imwrite('./aaa.tif', datacube)
+        band_image = datacube[:, :, 0]
+        
+        img = Image.fromarray(band_image)
+        imgtk = ImageTk.PhotoImage(image=img)
+        
+        label = tk.Label(width=512, height=512, image=imgtk).grid()
