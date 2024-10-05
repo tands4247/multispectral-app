@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 import tifffile as tiff
 # 作成モジュール
 from functions.preprocessing_images import PreprocessingImages
+from functions.calc_vegindex import CalcVegIndex
 
 FONT_TYPE = "meiryo"
-WINDOW_SIZE = "1270x750"
+WINDOW_SIZE = "1350x750"
 INIT_DIR = 'C:/project/multispectral-app'
 
 class Application(customtkinter.CTk):
@@ -25,12 +26,17 @@ class Application(customtkinter.CTk):
         
         # MenuFrameの設定
         self.menu_frame = MenuFrame(self, width=70, height=700)
-        self.menu_frame.grid(row=0, column=0, padx=20, pady=0, sticky="n")
+        self.menu_frame.grid(row=0, column=0, padx=15, pady=0, sticky="n")
         
         # SpectralImgFrameの設定
-        self.spectral_img_frame = SpectralImgFrame(self, width=550, height=750)
-        self.spectral_img_frame.grid(row=0, column=1, padx=40, pady=0, sticky="n")
+        self.spectral_img_frame = SpectralImgFrame(self, width=530, height=750)
+        self.spectral_img_frame.grid(row=0, column=1, padx=15, pady=0, sticky="n")
         self.spectral_img_frame.grid_propagate(False)   # フレームを固定
+        
+        # VegIndexFrameの設定
+        self.veg_index_frame = VegIndexFrame(self, width=530, height=750)
+        self.veg_index_frame.grid(row=0, column=2, padx=15, pady=0, sticky="n")
+        self.veg_index_frame.grid_propagate(False)   # フレームを固定
 
 
 class MenuFrame(customtkinter.CTkFrame):
@@ -57,31 +63,41 @@ class MenuFrame(customtkinter.CTkFrame):
         self.label_select_band = customtkinter.CTkLabel(self, text='表示するバンドを選択')
         self.label_select_band.grid(row=3, padx=10, pady=(50,0), sticky="w")
         
-        self.radio_var = tk.IntVar(value=0)
+        self.radio_var_band = tk.IntVar(value=0)
         self.radiobutton_select_band1 = customtkinter.CTkRadioButton(self,
-                                        text='DataCube', command=self.radiobutton_event,
-                                        variable= self.radio_var, value=5)
+                                        text='DataCube', command=self.radbutton_event_select_band,
+                                        variable= self.radio_var_band, value=5)
         self.radiobutton_select_band1.grid(row=4, padx=10, pady=(10,0), sticky="w")
         
         self.radiobutton_select_band2 = customtkinter.CTkRadioButton(self,
-                                        text='Green', command=self.radiobutton_event,
-                                        variable= self.radio_var, value=1)
+                                        text='Green', command=self.radbutton_event_select_band,
+                                        variable= self.radio_var_band, value=1)
         self.radiobutton_select_band2.grid(row=5, padx=10, pady=(10,0), sticky="w")
         
         self.radiobutton_select_band3 = customtkinter.CTkRadioButton(self,
-                                        text='Red', command=self.radiobutton_event,
-                                        variable= self.radio_var, value=2)
+                                        text='Red', command=self.radbutton_event_select_band,
+                                        variable= self.radio_var_band, value=2)
         self.radiobutton_select_band3.grid(row=6, padx=10, pady=(10,0), sticky="w")
         
         self.radiobutton_select_band4 = customtkinter.CTkRadioButton(self,
-                                        text='Red-Edge', command=self.radiobutton_event,
-                                        variable= self.radio_var, value=3)
+                                        text='Red-Edge', command=self.radbutton_event_select_band,
+                                        variable= self.radio_var_band, value=3)
         self.radiobutton_select_band4.grid(row=7, padx=10, pady=(10,0), sticky="w")
         
         self.radiobutton_select_band5 = customtkinter.CTkRadioButton(self,
-                                        text='NIR', command=self.radiobutton_event,
-                                        variable= self.radio_var, value=4)
+                                        text='NIR', command=self.radbutton_event_select_band,
+                                        variable= self.radio_var_band, value=4)
         self.radiobutton_select_band5.grid(row=8, padx=10, pady=(10,0), sticky="w")
+        
+        # 表示 植生指数 - ラジオボタン
+        self.label_select_vegindex = customtkinter.CTkLabel(self, text='表示する植生指数を選択')
+        self.label_select_vegindex.grid(row=9, padx=10, pady=(50,0), sticky="w")
+        
+        self.radio_var_vegindex = tk.IntVar(value=0)
+        self.radiobutton_select_ndvi = customtkinter.CTkRadioButton(self,
+                                        text='NDVI', command=self.radbutton_event_select_vegindex,
+                                        variable= self.radio_var_vegindex, value=1)
+        self.radiobutton_select_ndvi.grid(row=10, padx=10, pady=(10,0), sticky="w")
     
     
     # フォルダ選択のコールバック
@@ -99,12 +115,22 @@ class MenuFrame(customtkinter.CTkFrame):
         preprocessor = PreprocessingImages(self.select_dir_path)
         image_8bit_list = preprocessor.bit_convert()
         self.datacube_list = preprocessor.make_datacube()
+        
+        vegindex_processor = CalcVegIndex(self.datacube_list)
+        ndvi_list = vegindex_processor.calc_NDVI()
+        print(ndvi_list)
 
         
     # ラジオボタンのイベント
-    def radiobutton_event(self):
+    def radbutton_event_select_band(self):
         self.display_band_index = self.radio_var.get()
         self.master.spectral_img_frame.display_spectral(self.datacube_list, self.display_band_index)
+        
+    
+    def radbutton_event_select_vegindex(self):
+        # if self.radio_var_vegindex == 1:
+        #     self.
+        pass
         
         
         
@@ -128,3 +154,9 @@ class SpectralImgFrame(customtkinter.CTkFrame):
         self.image_label.image = imgtk
         
         
+
+class VegIndexFrame(customtkinter.CTkFrame):
+    def __init__(self, window=None, width=None, height=None):
+        super().__init__(window, width=width, height=height)
+        self.image_label = customtkinter.CTkLabel(self, width=512, height=512, text="植生指数", fg_color="transparent")
+        self.image_label.grid()
