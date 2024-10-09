@@ -117,20 +117,19 @@ class MenuFrame(customtkinter.CTkFrame):
         self.datacube_list = preprocessor.make_datacube()
         
         vegindex_processor = CalcVegIndex(self.datacube_list)
-        ndvi_list = vegindex_processor.calc_NDVI()
-        print(ndvi_list)
+        self.ndvi_list = vegindex_processor.calc_NDVI()
 
         
-    # ラジオボタンのイベント
+    # ラジオボタンのイベント（表示するバンドを選択）
     def radbutton_event_select_band(self):
-        self.display_band_index = self.radio_var.get()
+        self.display_band_index = self.radio_var_band.get()
         self.master.spectral_img_frame.display_spectral(self.datacube_list, self.display_band_index)
         
     
     def radbutton_event_select_vegindex(self):
         # if self.radio_var_vegindex == 1:
         #     self.
-        pass
+        self.master.veg_index_frame.display_vegIndex(self.ndvi_list)
         
         
         
@@ -160,3 +159,10 @@ class VegIndexFrame(customtkinter.CTkFrame):
         super().__init__(window, width=width, height=height)
         self.image_label = customtkinter.CTkLabel(self, width=512, height=512, text="植生指数", fg_color="transparent")
         self.image_label.grid()
+        
+    def display_vegIndex(self, ndvi_list):   
+        img = Image.fromarray(np.uint8(ndvi_list[5]))
+        imgtk = customtkinter.CTkImage(light_image=img, dark_image=img, size=(512, 512))
+
+        self.image_label.configure(image=imgtk, text="")
+        self.image_label.image = imgtk
