@@ -22,8 +22,6 @@ import matplotlib.pyplot as plt
 import tifffile as tiff
 import glob
 import os
-# from matplotlib.colors import LinearSegmentedColormap
-# from matplotlib.colors import ListedColormap, BoundaryNor
 
 class PreprocessingImages():
     def __init__(self, dir_path):
@@ -41,28 +39,9 @@ class PreprocessingImages():
         return self.image_8bit_list
             
     def make_datacube(self):
-        # # datacube化
-        # self.images_tif = []
-        # self.datacube_list = []
-        # self.band_height = int(tiff.imread(self.images[0]).shape[0] / 4) # 512
-        # i = 1
-        
-        # # tiff形式で読み込み
-        # self.tif_images = []
-        # for img in self.images:
-        #     self.tif_images.append(tiff.imread(img))
-        
-        # for img in self.tif_images:
-        #     self.bands = [img[j*self.band_height:(j+1)*self.band_height, :] for j in range(4)]
-        #     self.datacube_list.append(np.stack(self.bands, axis=-1))
-        
-        # return self.datacube_list
-        
-        # datacube化
         
         self.images_tif = []
         self.datacube_list = []
-        # self.band_height = int(Image.open(self.images[0]).size[1] / 4)  # 512
         self.band_height = int(self.image_8bit_list[0].size[1] / 4)
         i = 1
 
