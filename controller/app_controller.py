@@ -1,8 +1,11 @@
 import os
 import tkinter as tk
 from tkinter import filedialog
-from model.preprocessing_images import PreprocessingImages
-from model.calc_vegindex import CalcVegIndex
+from PIL import Image
+import glob
+# from model.preprocessing_images import PreprocessingImages
+# from model.calc_vegindex import CalcVegIndex
+from model.multispectral_img_model import MultispectralImgModel
 from view.home_screen import ApplicationView
 
 INIT_DIR = 'C:/project/multispectral-app'
@@ -13,13 +16,18 @@ class ApplicationController:
         self.view.set_frames()
         self.datacube_list = []
         self.ndvi_list = []
+        self.image_tmp_list = []
         self.select_dir_path = None
+        self.slider_value = 0
+        self.display_band = 5
+        
     
     def run(self):
         self.view.mainloop()
 
     def select_dir_callback(self):
         init_dir = INIT_DIR if os.path.exists(INIT_DIR) else os.path.expanduser('~')
+        '''本番環境では以下のコメントアウトを外す。開発中は入力フォルダを中で定義する'''
         self.select_dir_path = filedialog.askdirectory(initialdir=init_dir)
         
         if self.select_dir_path:
@@ -27,16 +35,40 @@ class ApplicationController:
             self.view.menu_frame.label_dir_name.configure(text=f"フォルダ名: {folder_name}")
 
     def start_processing_callback(self):
-        preprocessor = PreprocessingImages(self.select_dir_path)
-        image_8bit_list = preprocessor.bit_convert()
-        self.datacube_list = preprocessor.make_datacube()
+        self.select_dir_path = INIT_DIR + '/test'
+        self.dir_path = os.path.join(self.select_dir_path, 'frames', '*')
+        self.images = glob.glob(self.dir_path)
+        
+        for img in self.images:
+            self.image_tmp_list.append(Image.open(img))
+        mul_img_model = MultispectralImgModel(self.image_tmp_list)
+        image_8bit_list = mul_img_model.bit_convert()
+        self.datacube_list = mul_img_model.make_datacube()
 
-        vegindex_processor = CalcVegIndex(self.datacube_list)
-        self.ndvi_list = vegindex_processor.calc_NDVI()
+        self.view.spectral_img_frame.create_widget_slider(len(self.datacube_list))
+
+        self.ndvi_list = mul_img_model.calc_NDVI()
+        
+        self.update_display()
+    
+    
+    def slider_event(self, value):
+        self.slider_value = int(value)
+        self.view.spectral_img_frame.value_label.configure(text=f"スライダー値: {self.slider_value}")
+        self.update_display()
+
 
     def radbutton_event_select_band(self):
-        display_band_index = self.view.menu_frame.radio_var_band.get()
-        self.view.spectral_img_frame.display_spectral(self.datacube_list, display_band_index)
+        self.display_band = self.view.menu_frame.radio_var_band.get()
+        self.update_display()
+
 
     def radbutton_event_select_vegindex(self):
-        self.view.veg_index_frame.display_vegIndex(self.ndvi_list)
+        self.update_display()
+        
+    
+    def update_display(self):
+        self.view.spectral_img_frame.display_spectral(self.datacube_list, self.display_band, self.slider_value)
+        self.view.veg_index_frame.display_vegIndex(self.ndvi_list, self.slider_value)
+        
+        
