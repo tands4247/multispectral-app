@@ -40,48 +40,32 @@ class MenuFrame(customtkinter.CTkFrame):
         self.create_widgets()
     
     def create_widgets(self):
-        # フォルダ選択ボタンの配置
-        self.button_select_dir = customtkinter.CTkButton(self, text='フォルダ選択',
-                                                            command=self.controller.select_dir_callback)
-        self.button_select_dir.grid(row=0, padx=10, pady=(15,0), sticky="w")
-        
-        # フォルダ名表示ラベル
-        self.label_dir_name = customtkinter.CTkLabel(self, text='フォルダ名: なし')
-        self.label_dir_name.grid(row=1, padx=10, pady=(10,0), sticky="w")
-        
-        # 前処理開始ボタン
-        self.button_start_proccesing = customtkinter.CTkButton(self, text='前処理開始', fg_color="#696969",
-                                                            command=self.controller.start_processing_callback)
-        self.button_start_proccesing.grid(row=2, padx=10, pady=(15,0), sticky="w")
-        
-        # 表示バンド - ラジオボタン
-        self.label_select_band = customtkinter.CTkLabel(self, text='表示するバンドを選択')
-        self.label_select_band.grid(row=3, padx=10, pady=(50,0), sticky="w")
+        self.create_button('フォルダ選択', 0, self.controller.select_dir_callback)
+        self.label_dir_name = self.create_label('フォルダ名: なし', 1)
+        self.create_button('前処理開始', 2, self.controller.start_processing_callback, "#696969")
 
+        # バンド選択ラジオボタン
+        self.create_label('表示するバンドを選択', 3, pady=(50,0))
         self.radio_var_band = tk.IntVar(value=5)
-
         bands = [("DataCube", 5), ("Green", 1), ("Red", 2), ("Red-Edge", 3), ("NIR", 4)]
-
         for idx, (text, value) in enumerate(bands, start=4):
-            radiobutton = customtkinter.CTkRadioButton(
-                self,
-                text=text,
-                command=self.controller.radbutton_event_select_band,
-                variable=self.radio_var_band,
-                value=value
-            )
-            radiobutton.grid(row=idx, padx=10, pady=(10, 0), sticky="w")
+            customtkinter.CTkRadioButton(self, text=text, variable=self.radio_var_band,
+                                         value=value, command=self.controller.radbutton_event_select_band).grid(row=idx, padx=10, pady=(10, 0), sticky="w")
 
-        
-        # 表示 植生指数 - ラジオボタン
-        self.label_select_vegindex = customtkinter.CTkLabel(self, text='表示する植生指数を選択')
-        self.label_select_vegindex.grid(row=9, padx=10, pady=(50,0), sticky="w")
-        
+        # 植生指数ラジオボタン
+        self.create_label('表示する植生指数を選択', 9, pady=(50,0))
         self.radio_var_vegindex = tk.IntVar(value=1)
-        self.radiobutton_select_ndvi = customtkinter.CTkRadioButton(self,
-                                        text='NDVI', command=self.controller.radbutton_event_select_vegindex,
-                                        variable= self.radio_var_vegindex, value=1)
-        self.radiobutton_select_ndvi.grid(row=10, padx=10, pady=(10,0), sticky="w")
+        customtkinter.CTkRadioButton(self, text='NDVI', variable=self.radio_var_vegindex,
+                                     value=1, command=self.controller.radbutton_event_select_vegindex).grid(row=10, padx=10, pady=(10,0), sticky="w")
+
+    def create_button(self, text, row, command, color=None):
+        customtkinter.CTkButton(self, text=text, command=command, fg_color=color).grid(row=row, padx=10, pady=(15,0), sticky="w")
+
+    def create_label(self, text, row, pady=(10, 0)):
+        label = customtkinter.CTkLabel(self, text=text)
+        label.grid(row=row, padx=10, pady=pady, sticky="w")
+        return label
+
         
 
 class SpectralImgFrame(customtkinter.CTkFrame):
@@ -126,16 +110,10 @@ class SpectralImgFrame(customtkinter.CTkFrame):
 
     
     def display_spectral(self, datacube_list, display_band, slider_value):
-        self.slider_value = slider_value
-        datacube = datacube_list[self.slider_value]
-        if display_band != 5:
-            display_image = datacube[:, :, display_band - 1]
-        else:
-            display_image = datacube
-                
+        datacube = datacube_list[slider_value]
+        display_image = datacube if display_band == 5 else datacube[:, :, display_band - 1]
         img = Image.fromarray(np.uint8(display_image))
         imgtk = customtkinter.CTkImage(light_image=img, dark_image=img, size=(512, 512))
-
         self.image_label.configure(image=imgtk, text="")
         self.image_label.image = imgtk
         
@@ -148,10 +126,8 @@ class VegIndexFrame(customtkinter.CTkFrame):
         self.image_label.grid()
         
     
-    def display_vegIndex(self, ndvi_list, slider_value):   
-        self.slider_value = slider_value
-        img = Image.fromarray(np.uint8(ndvi_list[self.slider_value]))
+    def display_veg_index(self, ndvi_list, slider_value):   
+        img = Image.fromarray(np.uint8(ndvi_list[slider_value]))
         imgtk = customtkinter.CTkImage(light_image=img, dark_image=img, size=(512, 512))
-
         self.image_label.configure(image=imgtk, text="")
         self.image_label.image = imgtk
