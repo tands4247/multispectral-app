@@ -35,27 +35,52 @@ class ApplicationController:
             self.view.menu_frame.label_dir_name.configure(text=f"フォルダ名: {folder_name}")
 
     def start_processing_callback(self):
+        # 本番では以下１行を削除
         self.select_dir_path = INIT_DIR + '/test'
         self.dir_path = os.path.join(self.select_dir_path, 'frames', '*')
         self.images = glob.glob(self.dir_path)
-        
+        self.image_tmp_list = list()
         for img in self.images:
             self.image_tmp_list.append(Image.open(img))
         mul_img_model = MultispectralImgModel(self.image_tmp_list)
         image_8bit_list = mul_img_model.bit_convert()
         self.datacube_list = mul_img_model.make_datacube()
-
-        self.view.spectral_img_frame.create_widget_slider(len(self.datacube_list))
+        
+        self.img_len = len(self.datacube_list)
+        self.view.spectral_img_frame.create_widget_slider(self.img_len)
 
         self.ndvi_list = mul_img_model.calc_NDVI()
         
         self.update_display()
     
     
+    
     def slider_event(self, value):
         self.slider_value = int(value)
         self.view.spectral_img_frame.value_label.configure(text=f"スライダー値: {self.slider_value}")
         self.update_display()
+    
+    def increment_slider(self):
+        self.current_value = int(self.view.spectral_img_frame.slider.get())
+        print(self.current_value)
+        if self.current_value < self.img_len - 1:
+            self.slider_value = self.current_value + 1
+            self.view.spectral_img_frame.slider.set(self.slider_value)
+            self.view.spectral_img_frame.value_label.configure(text=f"スライダー値: {self.slider_value}")
+            self.update_display()
+        else:
+            pass
+            
+    def decrement_slider(self):
+        self.current_value = int(self.view.spectral_img_frame.slider.get())
+        if self.current_value > 0:
+            self.slider_value = self.current_value - 1
+            self.view.spectral_img_frame.slider.set(self.slider_value)
+            self.view.spectral_img_frame.value_label.configure(text=f"スライダー値: {self.slider_value}")
+            self.update_display()
+        else:
+            pass
+
 
 
     def radbutton_event_select_band(self):

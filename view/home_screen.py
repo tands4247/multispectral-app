@@ -88,19 +88,42 @@ class SpectralImgFrame(customtkinter.CTkFrame):
     def __init__(self, window=None, width=None, height=None):
         super().__init__(window, width=width, height=height)
         self.image_label = customtkinter.CTkLabel(self, width=512, height=512, text="スペクトル画像", fg_color="transparent")
-        self.image_label.grid()
+        self.image_label.grid(row=0, column=0, columnspan=3, padx=10, pady=(10, 20), sticky="n")
         self.controller = window.controller
     
         
     # スライダーの追加
     def create_widget_slider(self, img_len):
-        self.slider = customtkinter.CTkSlider(self, width=30, height=30, from_=0, to=img_len-1, 
-                                              number_of_steps=img_len, command=self.controller.slider_event)
-        self.slider.grid(row=1, padx=10, pady=(40,0), sticky="ew")
+        self.img_len = img_len - 1
+        self.slider = customtkinter.CTkSlider(self, width=400, from_=0, to=self.img_len, 
+                                              number_of_steps=self.img_len, command=self.controller.slider_event)
+        self.slider.grid(row=1, column=0, columnspan=3, padx=15, pady=(10, 10), sticky="ew")
         self.slider.set(0)
+        
+        # 戻るボタンと次へボタン
+        self.decrement_button = customtkinter.CTkButton(self, text='back', command=self.controller.decrement_slider, width=100)
+        self.decrement_button.grid(row=2, column=0, padx=10, pady=(10, 20), sticky="e")
+
         self.value_label = customtkinter.CTkLabel(self, text=f"スライダー値:{self.slider.get()}")
-        self.value_label.grid(row=2, padx=10, pady=(20,0), sticky="ew")
-    
+        self.value_label.grid(row=2, column=1, padx=5, pady=(10, 20), sticky="ew")
+
+        self.increment_button = customtkinter.CTkButton(self, text='next', command=self.controller.increment_slider, width=100)
+        self.increment_button.grid(row=2, column=2, padx=10, pady=(10, 20), sticky="w")
+        
+        
+    def increment_slider(self):
+        current_value = self.slider.get()
+        if current_value < self.img_len:  # スライダーの最大値を超えないようにする
+            self.slider.set(current_value + 1)
+        self.value_label.configure(text=f"スライダー値: {self.slider_value}")
+            
+    def decrement_slider(self):
+        current_value = self.slider.get()
+        if current_value > 0:  # スライダーの最大値を超えないようにする
+            self.slider.set(current_value - 1)
+        self.value_label.configure(text=f"スライダー値: {self.slider_value}")
+
+
     
     def display_spectral(self, datacube_list, display_band, slider_value):
         self.slider_value = slider_value
