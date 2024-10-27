@@ -1,21 +1,5 @@
-'''
-要件
-    受け取った分析対象のフォルダパスを読み込む
-    8bit変換とデータキューブへ変換したものをそれぞれリスト化
-
-
-処理内容
-    make_directory : 格納するフォルダ作成
-    bit_convert : 8bitへ変換. metadataを削除して表示できるように
-    make_datacube_and_division : 4つのバンドを分割し保存、重ね合わせてデータキューブ化して保存
-    calcula_and_save_NDVImap : NDVIを計算し、NDVIマップを保存
-'''
-
-'''
-例外処理について検討
-'''
-
 from PIL import Image
+import numpy as np
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,21 +7,21 @@ import tifffile as tiff
 import glob
 import os
 
-class PreprocessingImages():
-    def __init__(self, dir_path):
-        self.dir_path = os.path.join(dir_path, 'frames', '*')
-        self.images = glob.glob(self.dir_path)
-        self.image_tmp_list = []
+class MultispectralImgModel():
+    
+    def __init__(self, imgs):
         self.image_8bit_list = []
-        for img in self.images:
-            self.image_tmp_list.append(Image.open(img))
+        self.ndvi_list = []
+        self.image_tmp_list = imgs
+    
     
     def bit_convert(self):
         for img in self.image_tmp_list:
             self.image_8bit_list.append(img.convert('L'))
             
         return self.image_8bit_list
-            
+    
+    
     def make_datacube(self):
         
         self.images_tif = []
@@ -55,3 +39,20 @@ class PreprocessingImages():
             self.datacube_list.append(np.stack(self.bands, axis=-1))
 
         return self.datacube_list
+    
+    
+    def calc_NDVI(self):
+        for self.datacube in self.datacube_list:
+            img = self.datacube.astype(np.float32)
+            # NaNの値を0に変換
+            img[np.isnan(img)] = 0
+            # 非負値に変換
+            img[img < 1.] = 1.
+            img_ndvi = (img[:, :, 3] - img[:, :, 1]) / (img[:, :, 3] + img[:, :, 1])
+            
+            # 0～255にスケーリング。cv2のカラーマップに対応させるために
+            img_ndvi = np.clip(img_ndvi, 0, 1)
+            img_ndvi = (img_ndvi * 255).astype(np.uint8)
+            
+            self.ndvi_list.append(cv2.applyColorMap(img_ndvi, cv2.COLORMAP_RAINBOW))
+        return self.ndvi_list
