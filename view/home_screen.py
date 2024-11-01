@@ -1,9 +1,8 @@
 import tkinter as tk
 import customtkinter
-from PIL import Image, ImageTk
+from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 FONT_TYPE = "meiryo"
 WINDOW_SIZE = "1350x750"
