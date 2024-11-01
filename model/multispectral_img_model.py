@@ -1,6 +1,5 @@
 from PIL import Image
 import numpy as np
-import cv2
 import matplotlib.pyplot as plt
 
 class MultispectralImgModel:
@@ -34,13 +33,27 @@ class MultispectralImgModel:
             img[np.isnan(img)] = 0  # NaNを0に置換
             img[img < 1.] = 1.  # 非負値に変換
             ndvi = (img[:, :, 3] - img[:, :, 1]) / (img[:, :, 3] + img[:, :, 1])
+            # ndvi = np.array(ndvi)
             self.ndvi_list.append(ndvi)
             
-            return self.ndvi_list    
+        return self.ndvi_list    
     
         
-# class VegetationIndexVisualizer:
-#     def __init__(self, vegindex_list):
-#         self.vegindex_list = vegindex_list
-    
-    
+
+class VegetationIndexVisualizer:
+    def __init__(self, vegindex_list):
+        self.vegindex_list = np.array(vegindex_list)
+        self.fig, self.ax = plt.subplots(figsize=(7, 7), dpi=100)
+        
+        # 初期表示のカラーマップ
+        self.im = self.ax.imshow(self.vegindex_list[0], cmap='viridis', vmin=-1, vmax=1)
+        self.ax.set_aspect('equal', adjustable='box')  # アスペクト比を維持
+
+        # カラーバーを一度だけ追加
+        self.cbar = self.fig.colorbar(self.im, ax=self.ax, shrink=1)
+        self.cbar.set_ticks(np.arange(-1, 1.1, 0.2))
+
+
+    def make_colormap(self, slider_value):
+        self.im.set_data(self.vegindex_list[slider_value])
+        return self.fig

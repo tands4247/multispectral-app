@@ -1,7 +1,8 @@
 import tkinter as tk
 import customtkinter
-from PIL import Image, ImageTk
+from PIL import Image
 import numpy as np
+import matplotlib.pyplot as plt
 
 FONT_TYPE = "meiryo"
 WINDOW_SIZE = "1350x750"
@@ -122,12 +123,18 @@ class SpectralImgFrame(customtkinter.CTkFrame):
 class VegIndexFrame(customtkinter.CTkFrame):
     def __init__(self, window=None, width=None, height=None):
         super().__init__(window, width=width, height=height)
+        self.canvas = None
         self.image_label = customtkinter.CTkLabel(self, width=512, height=512, text="植生指数", fg_color="transparent")
         self.image_label.grid()
-        
     
-    def display_veg_index(self, ndvi_list, slider_value):   
-        img = Image.fromarray(np.uint8(ndvi_list[slider_value]))
-        imgtk = customtkinter.CTkImage(light_image=img, dark_image=img, size=(512, 512))
-        self.image_label.configure(image=imgtk, text="")
-        self.image_label.image = imgtk
+    
+    def display_veg_index(self, fig):
+        if self.image_label:
+            self.image_label.destroy()
+        
+        if self.canvas:
+            self.canvas.get_tk_widget().destroy()
+            
+        self.canvas = FigureCanvasTkAgg(fig, master=self)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().grid()
