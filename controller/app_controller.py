@@ -3,7 +3,9 @@ import tkinter as tk
 from tkinter import filedialog
 from PIL import Image
 import glob
+import numpy as np
 from model.multispectral_img_model import MultispectralImgModel
+from model.multispectral_img_model import VegetationIndexVisualizer
 from view.home_screen import ApplicationView
 
 INIT_DIR = 'C:/project/multispectral-app'
@@ -47,6 +49,7 @@ class ApplicationController:
         self.view.spectral_img_frame.create_widget_slider(self.img_len)
 
         self.ndvi_list = mul_img_model.calc_NDVI()
+        self.veg_index_colormap = VegetationIndexVisualizer(self.ndvi_list)
         
         self.update_display()    
     
@@ -86,5 +89,6 @@ class ApplicationController:
     
     def update_display(self):
         self.view.spectral_img_frame.display_spectral(self.datacube_list, self.display_band, self.slider_value)
-        self.view.veg_index_frame.display_veg_index(self.ndvi_list, self.slider_value)
+        fig = self.veg_index_colormap.make_colormap(self.slider_value)
+        self.view.veg_index_frame.display_veg_index(fig)
         
