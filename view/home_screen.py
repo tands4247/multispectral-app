@@ -3,6 +3,7 @@ import customtkinter
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 FONT_TYPE = "meiryo"
 WINDOW_SIZE = "1350x750"
@@ -94,20 +95,6 @@ class SpectralImgFrame(customtkinter.CTkFrame):
 
         self.increment_button = customtkinter.CTkButton(self, text='next', command=self.controller.increment_slider, width=100)
         self.increment_button.grid(row=2, column=2, padx=10, pady=(10, 20), sticky="w")
-        
-        
-    def increment_slider(self):
-        current_value = self.slider.get()
-        if current_value < self.img_len:  # スライダーの最大値を超えないようにする
-            self.slider.set(current_value + 1)
-        self.value_label.configure(text=f"スライダー値: {self.slider_value}")
-            
-    def decrement_slider(self):
-        current_value = self.slider.get()
-        if current_value > 0:  # スライダーの最大値を超えないようにする
-            self.slider.set(current_value - 1)
-        self.value_label.configure(text=f"スライダー値: {self.slider_value}")
-
 
     
     def display_spectral(self, datacube_list, display_band, slider_value):
