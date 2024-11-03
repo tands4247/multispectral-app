@@ -5,7 +5,7 @@ from PIL import Image
 import glob
 import numpy as np
 from model.multispectral_img_model import MultispectralImgModel
-from model.multispectral_img_model import VegetationIndexVisualizer
+# from model.multispectral_img_model import VegetationIndexVisualizer
 from view.home_screen import ApplicationView
 
 INIT_DIR = 'C:/project/multispectral-app'
@@ -20,6 +20,7 @@ class ApplicationController:
         self.select_dir_path = None
         self.slider_value = 0
         self.display_band = 5
+        self.display_vegindex = 1
         
     
     def run(self):
@@ -41,15 +42,10 @@ class ApplicationController:
         self.image_tmp_list = list()
         self.image_tmp_list = [Image.open(img) for img in self.images]
         
-        mul_img_model = MultispectralImgModel(self.image_tmp_list)
-        image_8bit_list = mul_img_model.bit_convert()
-        self.datacube_list = mul_img_model.make_datacube()
-        
+        self.mul_img_model = MultispectralImgModel(self.image_tmp_list)
+        self.datacube_list = self.mul_img_model.make_datacube()
         self.img_len = len(self.datacube_list)
         self.view.spectral_img_frame.create_widget_slider(self.img_len)
-
-        self.ndvi_list = mul_img_model.calc_NDVI()
-        self.veg_index_colormap = VegetationIndexVisualizer(self.ndvi_list)
         
         self.update_display()    
     
@@ -84,11 +80,14 @@ class ApplicationController:
 
 
     def radbutton_event_select_vegindex(self):
+        self.display_vegindex = self.view.menu_frame.radio_var_vegindex.get()
         self.update_display()
         
     
     def update_display(self):
+        # バンド表示
         self.view.spectral_img_frame.display_spectral(self.datacube_list, self.display_band, self.slider_value)
-        fig = self.veg_index_colormap.make_colormap(self.slider_value)
+        # 植生指数カラーマップ表示
+        fig = self.mul_img_model.make_colormap(self.slider_value, self.display_vegindex)
         self.view.veg_index_frame.display_veg_index(fig)
         

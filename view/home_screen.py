@@ -3,6 +3,7 @@ import customtkinter
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 FONT_TYPE = "meiryo"
 WINDOW_SIZE = "1350x750"
@@ -56,8 +57,12 @@ class MenuFrame(customtkinter.CTkFrame):
         # 植生指数ラジオボタン
         self.create_label('表示する植生指数を選択', 9, pady=(50,0))
         self.radio_var_vegindex = tk.IntVar(value=1)
-        customtkinter.CTkRadioButton(self, text='NDVI', variable=self.radio_var_vegindex,
-                                     value=1, command=self.controller.radbutton_event_select_vegindex).grid(row=10, padx=10, pady=(10,0), sticky="w")
+        vegindexs = [("NDVI", 1), ("GNDVI", 2), ("NDRE", 3)]
+        for idx, (text, value) in enumerate(vegindexs, start=10):
+            customtkinter.CTkRadioButton(self, text=text, variable=self.radio_var_vegindex,
+                                        value=value, command=self.controller.radbutton_event_select_vegindex).grid(row=idx, padx=10, pady=(10,0), sticky="w")
+
+
 
     def create_button(self, text, row, command, color=None):
         customtkinter.CTkButton(self, text=text, command=command, fg_color=color).grid(row=row, padx=10, pady=(15,0), sticky="w")
@@ -94,20 +99,6 @@ class SpectralImgFrame(customtkinter.CTkFrame):
 
         self.increment_button = customtkinter.CTkButton(self, text='next', command=self.controller.increment_slider, width=100)
         self.increment_button.grid(row=2, column=2, padx=10, pady=(10, 20), sticky="w")
-        
-        
-    def increment_slider(self):
-        current_value = self.slider.get()
-        if current_value < self.img_len:  # スライダーの最大値を超えないようにする
-            self.slider.set(current_value + 1)
-        self.value_label.configure(text=f"スライダー値: {self.slider_value}")
-            
-    def decrement_slider(self):
-        current_value = self.slider.get()
-        if current_value > 0:  # スライダーの最大値を超えないようにする
-            self.slider.set(current_value - 1)
-        self.value_label.configure(text=f"スライダー値: {self.slider_value}")
-
 
     
     def display_spectral(self, datacube_list, display_band, slider_value):
