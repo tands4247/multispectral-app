@@ -57,8 +57,12 @@ class MenuFrame(customtkinter.CTkFrame):
         # 植生指数ラジオボタン
         self.create_label('表示する植生指数を選択', 9, pady=(50,0))
         self.radio_var_vegindex = tk.IntVar(value=1)
-        customtkinter.CTkRadioButton(self, text='NDVI', variable=self.radio_var_vegindex,
-                                     value=1, command=self.controller.radbutton_event_select_vegindex).grid(row=10, padx=10, pady=(10,0), sticky="w")
+        vegindexs = [("NDVI", 1), ("GNDVI", 2), ("NDRE", 3)]
+        for idx, (text, value) in enumerate(vegindexs, start=10):
+            customtkinter.CTkRadioButton(self, text=text, variable=self.radio_var_vegindex,
+                                        value=value, command=self.controller.radbutton_event_select_vegindex).grid(row=idx, padx=10, pady=(10,0), sticky="w")
+
+
 
     def create_button(self, text, row, command, color=None):
         customtkinter.CTkButton(self, text=text, command=command, fg_color=color).grid(row=row, padx=10, pady=(15,0), sticky="w")
