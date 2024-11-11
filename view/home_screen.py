@@ -61,9 +61,13 @@ class MenuFrame(customtkinter.CTkFrame):
         vegindexs = [("NDVI", 1), ("CI green", 2), ("GNDVI", 3), ("NDRE", 4)]
         self.create_radio_buttons(vegindexs, self.radio_var_vegindex, 10, self.controller.radbutton_event_select_vegindex)
 
+        # 反射率変換実行ボタン
+        self.create_button("反射率変換", 14, self.controller.reflectance_conversion)
+        
+        
     def create_button(self, text, row, command, color=None):
         """ボタンウィジェットを作成"""
-        customtkinter.CTkButton(self, text=text, command=command, fg_color=color).grid(row=row, padx=10, pady=(15, 0), sticky="w")
+        customtkinter.CTkButton(self, text=text, command=command, fg_color=color).grid(row=row, padx=10, pady=(30, 0), sticky="w")
 
     def create_label(self, text, row, pady=(10, 0)):
         """ラベルウィジェットを作成"""
@@ -137,3 +141,4 @@ class VegIndexFrame(customtkinter.CTkFrame):
         self.canvas = FigureCanvasTkAgg(fig, master=self)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid()
+

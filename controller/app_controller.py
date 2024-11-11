@@ -106,3 +106,6 @@ class ApplicationController:
         # 選択された植生指数のカラーマップ更新
         fig = self.mul_img_model.make_colormap(self.slider_value, self.display_vegindex)
         self.view.veg_index_frame.display_veg_index(fig)
+
+    def reflectance_conversion(self):
+        pass
