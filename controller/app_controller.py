@@ -6,6 +6,7 @@ import glob
 import numpy as np
 from model.multispectral_img_model import MultispectralImgModel
 from view.home_screen import ApplicationView
+from view.home_screen import TmpPanelView
 
 # 初期ディレクトリ設定
 INIT_DIR = 'C:/project/multispectral-app'
@@ -30,6 +31,8 @@ class ApplicationController:
         """アプリケーションを起動"""
         self.view.mainloop()
 
+
+    # 前処理時に実行
     def select_dir_callback(self):
         """フォルダ選択ダイアログを開き、選択されたフォルダを表示"""
         init_dir = INIT_DIR if os.path.exists(INIT_DIR) else os.path.expanduser('~')
@@ -38,6 +41,18 @@ class ApplicationController:
         if self.select_dir_path:
             folder_name = os.path.basename(self.select_dir_path)
             self.view.menu_frame.label_dir_name.configure(text=f"フォルダ名: {folder_name}")
+
+
+    # 標準化パネル画像を選択
+    def select_file_callback(self):
+        """ファイル選択ダイアログを開き、選択されたファイルを表示"""
+        # init_dir = INIT_DIR if os.path.exists(INIT_DIR) else os.path.expanduser('~')
+        self.select_panelfile_path = filedialog.askopenfilename(initialdir=init_dir)
+        
+        if self.select_panelfile_path:
+            panelfile_name = os.path.basename(self.select_panelfile_path)
+            self.panel_view.label_panelfile_name.configure(text=f"フォルダ名: {panelfile_name}")
+
 
     def start_processing_callback(self):
         """画像処理を開始するコールバック"""
@@ -108,4 +123,7 @@ class ApplicationController:
         self.view.veg_index_frame.display_veg_index(fig)
 
     def reflectance_conversion(self):
-        pass
+        # tmp_Viewのインスタンス生成と初期設定
+        self.panel_view = TmpPanelView(self)
+        self.panel_view.set_frame()
+        self.panel_view.mainloop()
