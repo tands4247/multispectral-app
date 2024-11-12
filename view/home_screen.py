@@ -148,33 +148,35 @@ class VegIndexFrame(customtkinter.CTkFrame):
 パネル画像を表示
 座標指定
 バンドごとの輝度を表示
-'''
+'''    
+
 class TmpPanelView(customtkinter.CTk):
     def __init__(self, controller):
-        """標準化パネルの座標指定ウィンドウの初期化"""
         super().__init__()
-        self.ref_controller = controller
+        self.controller = controller
         self.title('標準化パネルの座標指定')
         self.geometry("700x700")
         self.fonts = (FONT_TYPE, 15)
-        
+
     def set_frame(self):
         # パネル画像ファイル選択
-        self.create_button('ファイル選択', 0, self.ref_controller.select_file_callback)
-        self.label_panelfile_name = self.create_label('フォルダ名: なし', 1)
-        
-        # パネル画像表示
-        self.image_label = customtkinter.CTkLabel(self, width=512, height=512, text="パネル画像", fg_color="transparent")
-        self.image_label.grid(row=2, column=0, columnspan=3, padx=10, pady=(10, 20), sticky="n")
-        
-        
-    def create_button(self, text, row, command, color=None):
-        """ボタンウィジェットを作成"""
-        customtkinter.CTkButton(self, text=text, command=command, fg_color=color).grid(row=row, padx=10, pady=(30, 0), sticky="w")
+        self.select_file_button = self.create_button('ファイル選択', 0, self.controller.select_file_callback)
+        self.label_panelfile_name = self.create_label('ファイル名: なし', 1)
 
-    def create_label(self, text, row, pady=(10, 0)):
-        """ラベルウィジェットを作成"""
+        # パネル画像表示
+        self.image_label = self.create_label(text="パネル画像", row=2, sticky="n", width=550, height=550, fg_color="transparent")
+
+    def display_panel(self, imgtk):
+        """CTkImageオブジェクトを表示するメソッド"""
+        self.image_label.configure(image=imgtk, text="")
+        self.image_label.image = imgtk  # ここで参照を保持
+
+    def create_button(self, text, row, command, color=None):
+        button = customtkinter.CTkButton(self, text=text, command=command, fg_color=color)
+        button.grid(row=row, padx=10, pady=(30, 0), sticky="w")
+        return button
+
+    def create_label(self, text, row, pady=(10, 0), sticky="w", width=None, height=None, fg_color=None):
         label = customtkinter.CTkLabel(self, text=text)
-        label.grid(row=row, padx=10, pady=pady, sticky="w")
+        label.grid(row=row, padx=10, pady=pady, sticky=sticky)
         return label
-    
