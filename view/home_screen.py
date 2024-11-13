@@ -149,9 +149,9 @@ class VegIndexFrame(customtkinter.CTkFrame):
 座標指定
 バンドごとの輝度を表示
 '''    
-
-class TmpPanelView(customtkinter.CTk):
-    def __init__(self, controller):
+# サブウィンドウ
+class PanelSubView(customtkinter.CTkToplevel):
+    def __init__(self, master, controller):
         super().__init__()
         self.controller = controller
         self.title('標準化パネルの座標指定')

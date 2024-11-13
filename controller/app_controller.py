@@ -7,7 +7,7 @@ import glob
 import numpy as np
 from model.multispectral_img_model import MultispectralImgModel
 from view.home_screen import ApplicationView
-from view.home_screen import TmpPanelView
+from view.home_screen import PanelSubView
 
 # 初期ディレクトリ設定
 INIT_DIR = 'C:/project/multispectral-app'
@@ -114,10 +114,9 @@ class ApplicationController:
 
 
     def reflectance_conversion(self):
-        # tmp_Viewのインスタンス生成と初期設定
-        self.panel_view = TmpPanelView(self)
-        self.panel_view.set_frame()
-        self.panel_view.mainloop()
+        # サブwindowインスタンス生成
+        self.sub_view = PanelSubView(self.view, self)
+        self.sub_view.set_frame()
         
         
     # 標準化パネル画像を選択
@@ -128,7 +127,7 @@ class ApplicationController:
         
         if self.select_panelfile_path:
             self.panelfile_name = os.path.basename(self.select_panelfile_path)
-            self.panel_view.label_panelfile_name.configure(text=f"ファイル名: {self.panelfile_name}")
+            self.sub_view.label_panelfile_name.configure(text=f"ファイル名: {self.panelfile_name}")
             self.open_panel_img()
     
     def open_panel_img(self):
@@ -157,7 +156,7 @@ class ApplicationController:
             # self.imgtk = ImageTk.PhotoImage(self.panel_img)
             
             # パネルビューに画像を表示
-            self.panel_view.display_panel(self.imgtk)
+            self.sub_view.display_panel(self.imgtk)
             
         except Exception as e:
             print(f"An unexpected error occurred while opening the image: {e}")
