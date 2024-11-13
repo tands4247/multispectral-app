@@ -1,6 +1,6 @@
 import tkinter as tk
 import customtkinter
-from PIL import Image
+from PIL import Image, ImageTk
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -164,12 +164,17 @@ class PanelSubView(customtkinter.CTkToplevel):
         self.label_panelfile_name = self.create_label('ファイル名: なし', 1)
 
         # パネル画像表示
-        self.image_label = self.create_label(text="パネル画像", row=2, sticky="n", width=550, height=550, fg_color="transparent")
+        # self.image_label = self.create_label(text="パネル画像", row=2, sticky="n", width=512, height=512, fg_color="transparent")
 
-    def display_panel(self, imgtk):
-        """CTkImageオブジェクトを表示するメソッド"""
-        self.image_label.configure(image=imgtk, text="")
-        self.image_label.image = imgtk  # ここで参照を保持
+    def display_canvas_panel(self, panel_img):
+        """Canvasでパネル画像を表示"""
+        self.panel_img = panel_img
+        self.canvas_panel = tk.Canvas(self, width=512, height=512)
+        self.canvas_panel.grid(row=2, column=0, padx=(150,0), pady=(50, 0), sticky='nsew')
+        
+        self.canvas_panel.create_image(0, 0, image=self.panel_img, anchor=tk.NW)
+        self.canvas_panel.image = self.panel_img # 参照を保持
+        
 
     def create_button(self, text, row, command, color=None):
         button = customtkinter.CTkButton(self, text=text, command=command, fg_color=color)
@@ -180,3 +185,4 @@ class PanelSubView(customtkinter.CTkToplevel):
         label = customtkinter.CTkLabel(self, text=text)
         label.grid(row=row, padx=10, pady=pady, sticky=sticky)
         return label
+

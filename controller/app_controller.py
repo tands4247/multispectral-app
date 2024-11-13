@@ -151,12 +151,12 @@ class ApplicationController:
             print(f"Image loaded successfully with size: {self.panel_img.size}")
             
             # ImageをCTkImageに変換
-            self.imgtk = customtkinter.CTkImage(self.panel_img, size=self.panel_img.size)
+            # self.imgtk = customtkinter.CTkImage(self.panel_img, size=self.panel_img.size)
             
-            # self.imgtk = ImageTk.PhotoImage(self.panel_img)
+            self.imgtk = ImageTk.PhotoImage(self.panel_img)
             
             # パネルビューに画像を表示
-            self.sub_view.display_panel(self.imgtk)
+            self.sub_view.display_canvas_panel(self.imgtk)
             
         except Exception as e:
             print(f"An unexpected error occurred while opening the image: {e}")
