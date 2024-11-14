@@ -150,17 +150,17 @@ class VegIndexFrame(customtkinter.CTkFrame):
 バンドごとの輝度を表示
 '''    
 # サブウィンドウ
-class PanelSubView(customtkinter.CTkToplevel):
+class PanelWindowView(customtkinter.CTkToplevel):
     def __init__(self, master, controller):
         super().__init__()
-        self.controller = controller
+        self.panel_controller = controller
         self.title('標準化パネルの座標指定')
         self.geometry("700x700")
         self.fonts = (FONT_TYPE, 15)
 
     def set_frame(self):
         # パネル画像ファイル選択
-        self.select_file_button = self.create_button('ファイル選択', 0, self.controller.select_file_callback)
+        self.select_file_button = self.create_button('ファイル選択', 0, self.panel_controller.select_file_callback)
         self.label_panelfile_name = self.create_label('ファイル名: なし', 1)
 
         # パネル画像表示
@@ -169,11 +169,16 @@ class PanelSubView(customtkinter.CTkToplevel):
     def display_canvas_panel(self, panel_img):
         """Canvasでパネル画像を表示"""
         self.panel_img = panel_img
+        # canvasの設定
         self.canvas_panel = tk.Canvas(self, width=512, height=512)
         self.canvas_panel.grid(row=2, column=0, padx=(150,0), pady=(50, 0), sticky='nsew')
-        
         self.canvas_panel.create_image(0, 0, image=self.panel_img, anchor=tk.NW)
         self.canvas_panel.image = self.panel_img # 参照を保持
+        
+        # canvas内のイベントを設定
+        self.canvas_panel.bind("<ButtonPress-1>", self.panel_controller.start_point_get)
+        self.canvas_panel.bind("<Button1-Motion>", self.panel_controller.rect_drawing)
+        self.canvas_panel.bind("<ButtonRelease-1>", self.panel_controller.release_action)
         
 
     def create_button(self, text, row, command, color=None):

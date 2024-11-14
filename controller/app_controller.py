@@ -7,7 +7,8 @@ import glob
 import numpy as np
 from model.multispectral_img_model import MultispectralImgModel
 from view.home_screen import ApplicationView
-from view.home_screen import PanelSubView
+from view.home_screen import PanelWindowView
+
 
 # 初期ディレクトリ設定
 INIT_DIR = 'C:/project/multispectral-app'
@@ -111,12 +112,18 @@ class ApplicationController:
         # 選択された植生指数のカラーマップ更新
         fig = self.mul_img_model.make_colormap(self.slider_value, self.display_vegindex)
         self.view.veg_index_frame.display_veg_index(fig)
-
-
+    
     def reflectance_conversion(self):
         # サブwindowインスタンス生成
-        self.sub_view = PanelSubView(self.view, self)
-        self.sub_view.set_frame()
+        PanelWindowController(self)
+
+
+class PanelWindowController:
+    def __init__(self, master):
+        pass
+        # サブwindowインスタンス生成
+        self.panel_view = PanelWindowView(master.view, self)
+        self.panel_view.set_frame()
         
         
     # 標準化パネル画像を選択
@@ -127,7 +134,7 @@ class ApplicationController:
         
         if self.select_panelfile_path:
             self.panelfile_name = os.path.basename(self.select_panelfile_path)
-            self.sub_view.label_panelfile_name.configure(text=f"ファイル名: {self.panelfile_name}")
+            self.panel_view.label_panelfile_name.configure(text=f"ファイル名: {self.panelfile_name}")
             self.open_panel_img()
     
     def open_panel_img(self):
@@ -148,16 +155,53 @@ class ApplicationController:
 
             if panel_size == (512, 2048):
                 self.panel_img = self.panel_img.crop((0, 0, 512, 512))
-            print(f"Image loaded successfully with size: {self.panel_img.size}")
-            
-            # ImageをCTkImageに変換
-            # self.imgtk = customtkinter.CTkImage(self.panel_img, size=self.panel_img.size)
             
             self.imgtk = ImageTk.PhotoImage(self.panel_img)
             
             # パネルビューに画像を表示
-            self.sub_view.display_canvas_panel(self.imgtk)
+            self.panel_view.display_canvas_panel(self.imgtk)
             
         except Exception as e:
             print(f"An unexpected error occurred while opening the image: {e}")
             
+
+    def start_point_get(self, event):
+        global start_x, start_y
+        
+        self.panel_view.canvas_panel.create_rectangle(event.x,
+                             event.y,
+                             event.x + 1,
+                             event.y + 1,
+                             outline="red",
+                             tag="rect1")
+        
+        # グローバル変数に座標を格納
+        start_x, start_y = event.x, event.y
+        
+    
+    def rect_drawing(self, event):
+        # ドラッグ中のマウスポインタが領域外に出た時の処理
+        if event.x < 0:
+            end_x = 0
+        else:
+            end_x = min(self.panel_img.width, event.x)
+        if event.y < 0:
+            end_y = 0
+        else:
+            end_y = min(self.panel_img.height, event.y)
+
+        # "rect1"タグの画像を再描画
+        self.panel_view.canvas_panel.coords("rect1", start_x, start_y, end_x, end_y)
+    
+    
+    def release_action(self, event):
+        # "rect1"タグの画像の座標を元の縮尺に戻して取得
+        start_x, start_y, end_x, end_y = [
+            round(n * 1) for n in self.panel_view.canvas_panel.coords("rect1")
+        ]
+
+        print(start_x)
+        print(start_y)
+        print(end_x)
+        print(end_y)
+    
