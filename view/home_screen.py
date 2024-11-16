@@ -190,7 +190,7 @@ class PanelWindowView(customtkinter.CTkToplevel):
             self.label_brightness.append(label)
             
         # 事後処理
-        customtkinter.CTkButton(self, text='パネル範囲決定', command=self.panel_controller.confirm_rect).place(x=300, y=700)
+        customtkinter.CTkButton(self, text='パネル範囲決定', command=self.panel_controller.confirm_rect).place(x=280, y=680)
         
 
     def display_canvas_panel(self, panel_img):
