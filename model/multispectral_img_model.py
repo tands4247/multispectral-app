@@ -90,3 +90,20 @@ class MultispectralImgModel:
         """カラーバーの範囲と目盛りを設定"""
         self.im.set_clim(vmin, vmax)
         self.cbar.set_ticks(np.arange(vmin, vmax + tick_interval, tick_interval))
+        
+        
+    def get_panel_brightness(self, panel_img, rectangle_area):
+        self.panel_img = panel_img
+        self.rectangle_area = rectangle_area
+        self.panel_brightness = []
+        
+        # 原点座標と高さ、幅を取得
+        self.start_x = self.rectangle_area[0]
+        self.start_y = self.rectangle_area[1]
+        self.end_x = self.rectangle_area[2]
+        self.end_y = self.rectangle_area[3]
+        
+        for i in range(4):
+            self.panel_band = self.panel_img.crop((self.start_x, self.start_y+(i*512), self.end_x, self.end_y+(i*512)))
+            self.panel_brightness.append(round(np.mean(self.panel_band), 2))
+        return self.panel_brightness

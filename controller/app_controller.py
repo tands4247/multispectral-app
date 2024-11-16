@@ -1,11 +1,14 @@
 import os
 import tkinter as tk
 from tkinter import filedialog
-from PIL import Image
+import customtkinter
+from PIL import Image, ImageTk
 import glob
 import numpy as np
 from model.multispectral_img_model import MultispectralImgModel
 from view.home_screen import ApplicationView
+from view.home_screen import PanelWindowView
+
 
 # 初期ディレクトリ設定
 INIT_DIR = 'C:/project/multispectral-app'
@@ -15,7 +18,6 @@ class ApplicationController:
         """コントローラの初期化"""
         # Viewのインスタンス生成と初期設定
         self.view = ApplicationView(self)
-        self.view.set_frames()
         
         # 属性の初期化
         self.datacube_list = []
@@ -30,6 +32,8 @@ class ApplicationController:
         """アプリケーションを起動"""
         self.view.mainloop()
 
+
+    # 前処理時に実行
     def select_dir_callback(self):
         """フォルダ選択ダイアログを開き、選択されたフォルダを表示"""
         init_dir = INIT_DIR if os.path.exists(INIT_DIR) else os.path.expanduser('~')
@@ -38,6 +42,7 @@ class ApplicationController:
         if self.select_dir_path:
             folder_name = os.path.basename(self.select_dir_path)
             self.view.menu_frame.label_dir_name.configure(text=f"フォルダ名: {folder_name}")
+
 
     def start_processing_callback(self):
         """画像処理を開始するコールバック"""
@@ -106,3 +111,103 @@ class ApplicationController:
         # 選択された植生指数のカラーマップ更新
         fig = self.mul_img_model.make_colormap(self.slider_value, self.display_vegindex)
         self.view.veg_index_frame.display_veg_index(fig)
+    
+    def reflectance_conversion(self):
+        """パネルウィンドウの生成とモデルの渡し"""
+        if self.mul_img_model:
+            PanelWindowController(self)
+        else:
+            print("Error: モデルが生成されていません。最初に画像を処理してください。")
+
+
+class PanelWindowController:
+    def __init__(self, master):
+        # サブwindowインスタンス生成
+        self.panel_view = PanelWindowView(master.view, self)
+        self.mul_img_model = master.mul_img_model
+        
+        """以下テスト用"""
+        self.select_panelfile_path = INIT_DIR + "/test/frames/e0001_frame_ms_00113_.tif"
+        print(self.select_panelfile_path)
+        self.open_panel_img()
+        
+        
+    # 標準化パネル画像を選択
+    def select_file_callback(self):
+        """ファイル選択ダイアログを開き、選択されたファイルを表示"""
+        init_dir = INIT_DIR if os.path.exists(INIT_DIR) else os.path.expanduser('~')
+        self.select_panelfile_path = filedialog.askopenfilename(initialdir=init_dir)
+        
+        if self.select_panelfile_path:
+            self.panelfile_name = os.path.basename(self.select_panelfile_path)
+            self.panel_view.label_panelfile_name.configure(text=f"ファイル名: {self.panelfile_name}")
+            self.open_panel_img()
+    
+    def open_panel_img(self):
+        try:
+            # ファイルパスが正しいかチェック
+            if not hasattr(self, 'select_panelfile_path') or not self.select_panelfile_path:
+                print("Error: No file path specified.")
+                return
+
+            # 画像の読み込み
+            if not os.path.exists(self.select_panelfile_path):
+                print(f"Error: The file {self.select_panelfile_path} does not exist.")
+                return
+
+            # 画像の読み込み
+            self.panel_img = Image.open(self.select_panelfile_path)
+            panel_size = self.panel_img.size
+
+            if panel_size == (512, 2048):
+                self.panel_img_crop = self.panel_img.crop((0, 0, 512, 512))
+            
+            self.imgtk = ImageTk.PhotoImage(self.panel_img_crop)
+            
+            # パネルビューに画像を表示
+            self.panel_view.display_canvas_panel(self.imgtk)
+            
+        except Exception as e:
+            print(f"An unexpected error occurred while opening the image: {e}")
+            
+
+    def rect_drawing(self, event):
+        """ マウスクリックで四角形の開始点を指定、ドラッグで拡大描画 """
+        # もし開始点が未設定の場合（最初のクリック）に設定
+        if not hasattr(self, 'start_x') or not hasattr(self, 'start_y'):
+            self.start_x, self.start_y = event.x, event.y
+
+        # 現在のカーソル位置に基づいて終了点の座標を取得（領域外チェック付き）
+        end_x = max(0, min(self.panel_img_crop.width, event.x))
+        end_y = max(0, min(self.panel_img_crop.height, event.y))
+
+        # 矩形がまだ存在しなければ描画
+        if not self.panel_view.canvas_panel.find_withtag("rect1"):
+            self.panel_view.canvas_panel.create_rectangle(
+                self.start_x, self.start_y, end_x, end_y,
+                outline="red", tag="rect1"
+            )
+        else:
+            # 既存の矩形の右下隅を更新
+            self.panel_view.canvas_panel.coords("rect1", self.start_x, self.start_y, end_x, end_y)
+
+    def release_action(self, event):
+        """ マウスボタンを離したときに最終的な座標を取得 """
+        start_x, start_y, end_x, end_y = self.panel_view.canvas_panel.coords("rect1")
+        self.rectangle_area = [start_x, start_y, end_x, end_y]
+
+        # パネルの各バンドの放射輝度を受け取る
+        self.panel_brightness_list = self.mul_img_model.get_panel_brightness(self.panel_img, self.rectangle_area)
+        # 放射輝度ラベル更新
+        bands = ["Green", "Red", "RedEdge", "NIR"]
+        for i, value in enumerate(self.panel_brightness_list):
+            self.panel_view.update_brightness_label(i, value)
+            
+        
+        # 開始点をリセット
+        del self.start_x
+        del self.start_y
+        
+    def confirm_rect(self):
+        if self.panel_brightness_list:
+            self.panel_view.destroy()

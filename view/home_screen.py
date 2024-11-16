@@ -1,6 +1,6 @@
 import tkinter as tk
 import customtkinter
-from PIL import Image
+from PIL import Image, ImageTk
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -16,11 +16,13 @@ class ApplicationView(customtkinter.CTk):
         self.controller = controller
         self.title('マルチスペクトル画像処理')
         self.geometry(WINDOW_SIZE)
-        self.fonts = (FONT_TYPE, 15)
+        self.fonts = (FONT_TYPE, 17)
         
         # テーマ設定
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme("dark-blue")
+        
+        self.set_frames()
     
     def set_frames(self):
         """各フレーム（Menu、SpectralImg、VegIndex）の設定と配置"""
@@ -61,9 +63,13 @@ class MenuFrame(customtkinter.CTkFrame):
         vegindexs = [("NDVI", 1), ("CI green", 2), ("GNDVI", 3), ("NDRE", 4)]
         self.create_radio_buttons(vegindexs, self.radio_var_vegindex, 10, self.controller.radbutton_event_select_vegindex)
 
+        # 反射率変換実行ボタン
+        self.create_button("反射率変換", 14, self.controller.reflectance_conversion)
+        
+        
     def create_button(self, text, row, command, color=None):
         """ボタンウィジェットを作成"""
-        customtkinter.CTkButton(self, text=text, command=command, fg_color=color).grid(row=row, padx=10, pady=(15, 0), sticky="w")
+        customtkinter.CTkButton(self, text=text, command=command, fg_color=color).grid(row=row, padx=10, pady=(30, 0), sticky="w")
 
     def create_label(self, text, row, pady=(10, 0)):
         """ラベルウィジェットを作成"""
@@ -84,7 +90,8 @@ class SpectralImgFrame(customtkinter.CTkFrame):
         """スペクトル画像表示用フレームの初期化"""
         super().__init__(window, width=width, height=height)
         self.controller = window.controller
-        self.image_label = customtkinter.CTkLabel(self, width=512, height=512, text="スペクトル画像", fg_color="transparent")
+        self.image_label = customtkinter.CTkLabel(self, width=512, height=512, text="スペクトル画像",
+                                                  fg_color="transparent", font=window.fonts)
         self.image_label.grid(row=0, column=0, columnspan=3, padx=10, pady=(10, 20), sticky="n")
     
     def create_widget_slider(self, img_len):
@@ -123,7 +130,8 @@ class VegIndexFrame(customtkinter.CTkFrame):
         """植生指数表示用フレームの初期化"""
         super().__init__(window, width=width, height=height)
         self.canvas = None
-        self.image_label = customtkinter.CTkLabel(self, width=512, height=512, text="植生指数", fg_color="transparent")
+        self.image_label = customtkinter.CTkLabel(self, width=512, height=512, text="植生指数",
+                                                  fg_color="transparent", font=window.fonts)
         self.image_label.grid()
 
     def display_veg_index(self, fig):
@@ -137,3 +145,78 @@ class VegIndexFrame(customtkinter.CTkFrame):
         self.canvas = FigureCanvasTkAgg(fig, master=self)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid()
+
+
+'''
+ファイル選択ボタン
+パネル画像を表示
+座標指定
+バンドごとの輝度を表示
+'''    
+# サブウィンドウ
+class PanelWindowView(customtkinter.CTkToplevel):
+    def __init__(self, master, controller):
+        super().__init__()
+        self.panel_controller = controller
+        self.title('標準化パネルの座標指定')
+        self.geometry("650x800")
+        self.fonts = (FONT_TYPE, 17)
+        
+        # 配置設定
+        # self.grid_columnconfigure(2, weight=1)  # 下部に余白
+        self.set_frame()
+
+
+    def set_frame(self):
+        # パネル画像ファイル選択
+        self.select_file_button = self.create_button('ファイル選択', 0, self.panel_controller.select_file_callback)
+        self.label_panelfile_name = self.create_label('ファイル名: なし', 1)
+        
+        self.text_label = self.create_label("パネル部分をドラッグして選択してください", row=2, text_color="orangered")
+
+        # Canvas準備
+        self.canvas_panel = tk.Canvas(self, width=512, height=512)
+        self.canvas_panel.create_rectangle(0, 0, 513, 513, fill="")
+        self.canvas_panel.create_text(250, 250, text="標準化パネル画像", font=self.fonts)
+        self.canvas_panel.grid(row=3, column=0, padx=(150,0), pady=(40, 0), sticky='nsew')
+        
+        # 標準化パネルの放射輝度を表示
+        self.bands = ["Green", "Red", "RedEdge", "NIR"]
+        self.label_brightness = []
+        for row, band in enumerate(self.bands, start=4):
+            self.var_name = f"{band}_brightness"
+            label = customtkinter.CTkLabel(self, text=f"{band}: None")
+            label.grid(row=row, column=0, padx=10, pady=5, sticky='w')
+            self.label_brightness.append(label)
+            
+        # 事後処理
+        customtkinter.CTkButton(self, text='パネル範囲決定', command=self.panel_controller.confirm_rect).place(x=300, y=700)
+        
+
+    def display_canvas_panel(self, panel_img):
+        """Canvasでパネル画像を表示"""
+        self.panel_img = panel_img
+        # canvasの設定
+        self.canvas_panel.create_image(0, 0, image=self.panel_img, anchor=tk.NW)
+        self.canvas_panel.image = self.panel_img # 参照を保持
+        
+        # canvas内のイベントを設定
+        self.canvas_panel.bind("<Button1-Motion>", self.panel_controller.rect_drawing)
+        self.canvas_panel.bind("<ButtonRelease-1>", self.panel_controller.release_action)
+        
+        
+    def update_brightness_label(self, i, brightness):
+        # self.var_name = f"{band}_brightness"
+        self.label_brightness[i].configure(text=f"{self.bands[i]}: {brightness}")
+        
+
+    def create_button(self, text, row, command, padx=10, pady=(30, 0), column=None, columnspan=None, color=None, rowspan=None, sticky="w"):
+        button = customtkinter.CTkButton(self, text=text, command=command, fg_color=color)
+        button.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
+        return button
+
+    def create_label(self, text, row, pady=(10, 0), sticky="w", width=None, height=None, fg_color=None, text_color=None):
+        label = customtkinter.CTkLabel(self, text=text, fg_color=fg_color, text_color=text_color)
+        label.grid(row=row, padx=10, pady=pady, sticky=sticky)
+        return label
+
