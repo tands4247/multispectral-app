@@ -18,7 +18,6 @@ class ApplicationController:
         """コントローラの初期化"""
         # Viewのインスタンス生成と初期設定
         self.view = ApplicationView(self)
-        self.view.set_frames()
         
         # 属性の初期化
         self.datacube_list = []
@@ -114,16 +113,23 @@ class ApplicationController:
         self.view.veg_index_frame.display_veg_index(fig)
     
     def reflectance_conversion(self):
-        # サブwindowインスタンス生成
-        PanelWindowController(self)
+        """パネルウィンドウの生成とモデルの渡し"""
+        if self.mul_img_model:
+            PanelWindowController(self)
+        else:
+            print("Error: モデルが生成されていません。最初に画像を処理してください。")
 
 
 class PanelWindowController:
     def __init__(self, master):
-        pass
         # サブwindowインスタンス生成
         self.panel_view = PanelWindowView(master.view, self)
-        self.panel_view.set_frame()
+        self.mul_img_model = master.mul_img_model
+        
+        """以下テスト用"""
+        self.select_panelfile_path = INIT_DIR + "/test/frames/e0001_frame_ms_00113_.tif"
+        print(self.select_panelfile_path)
+        self.open_panel_img()
         
         
     # 標準化パネル画像を選択
@@ -154,9 +160,9 @@ class PanelWindowController:
             panel_size = self.panel_img.size
 
             if panel_size == (512, 2048):
-                self.panel_img = self.panel_img.crop((0, 0, 512, 512))
+                self.panel_img_crop = self.panel_img.crop((0, 0, 512, 512))
             
-            self.imgtk = ImageTk.PhotoImage(self.panel_img)
+            self.imgtk = ImageTk.PhotoImage(self.panel_img_crop)
             
             # パネルビューに画像を表示
             self.panel_view.display_canvas_panel(self.imgtk)
@@ -165,43 +171,43 @@ class PanelWindowController:
             print(f"An unexpected error occurred while opening the image: {e}")
             
 
-    def start_point_get(self, event):
-        global start_x, start_y
-        
-        self.panel_view.canvas_panel.create_rectangle(event.x,
-                             event.y,
-                             event.x + 1,
-                             event.y + 1,
-                             outline="red",
-                             tag="rect1")
-        
-        # グローバル変数に座標を格納
-        start_x, start_y = event.x, event.y
-        
-    
     def rect_drawing(self, event):
-        # ドラッグ中のマウスポインタが領域外に出た時の処理
-        if event.x < 0:
-            end_x = 0
-        else:
-            end_x = min(self.panel_img.width, event.x)
-        if event.y < 0:
-            end_y = 0
-        else:
-            end_y = min(self.panel_img.height, event.y)
+        """ マウスクリックで四角形の開始点を指定、ドラッグで拡大描画 """
+        # もし開始点が未設定の場合（最初のクリック）に設定
+        if not hasattr(self, 'start_x') or not hasattr(self, 'start_y'):
+            self.start_x, self.start_y = event.x, event.y
 
-        # "rect1"タグの画像を再描画
-        self.panel_view.canvas_panel.coords("rect1", start_x, start_y, end_x, end_y)
-    
-    
+        # 現在のカーソル位置に基づいて終了点の座標を取得（領域外チェック付き）
+        end_x = max(0, min(self.panel_img_crop.width, event.x))
+        end_y = max(0, min(self.panel_img_crop.height, event.y))
+
+        # 矩形がまだ存在しなければ描画
+        if not self.panel_view.canvas_panel.find_withtag("rect1"):
+            self.panel_view.canvas_panel.create_rectangle(
+                self.start_x, self.start_y, end_x, end_y,
+                outline="red", tag="rect1"
+            )
+        else:
+            # 既存の矩形の右下隅を更新
+            self.panel_view.canvas_panel.coords("rect1", self.start_x, self.start_y, end_x, end_y)
+
     def release_action(self, event):
-        # "rect1"タグの画像の座標を元の縮尺に戻して取得
-        start_x, start_y, end_x, end_y = [
-            round(n * 1) for n in self.panel_view.canvas_panel.coords("rect1")
-        ]
+        """ マウスボタンを離したときに最終的な座標を取得 """
+        start_x, start_y, end_x, end_y = self.panel_view.canvas_panel.coords("rect1")
+        self.rectangle_area = [start_x, start_y, end_x, end_y]
 
-        print(start_x)
-        print(start_y)
-        print(end_x)
-        print(end_y)
-    
+        # パネルの各バンドの放射輝度を受け取る
+        self.panel_brightness_list = self.mul_img_model.get_panel_brightness(self.panel_img, self.rectangle_area)
+        # 放射輝度ラベル更新
+        bands = ["Green", "Red", "RedEdge", "NIR"]
+        for i, value in enumerate(self.panel_brightness_list):
+            self.panel_view.update_brightness_label(i, value)
+            
+        
+        # 開始点をリセット
+        del self.start_x
+        del self.start_y
+        
+    def confirm_rect(self):
+        if self.panel_brightness_list:
+            self.panel_view.destroy()
