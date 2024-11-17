@@ -6,6 +6,7 @@ from PIL import Image, ImageTk
 import glob
 import numpy as np
 from model.multispectral_img_model import MultispectralImgModel
+from model.multispectral_img_model import ColormapVisualizer
 from view.home_screen import ApplicationView
 from view.home_screen import PanelWindowView
 
@@ -54,7 +55,8 @@ class ApplicationController:
         
         # モデルの作成とデータキューブ生成
         self.mul_img_model = MultispectralImgModel(self.image_tmp_list)
-        self.datacube_list = self.mul_img_model.create_datacube()
+        self.datacube_list = self.mul_img_model.datacube_list
+        self.colormap_visualizer = ColormapVisualizer(self.mul_img_model)
         
         # スライダーと表示の設定
         self.img_len = len(self.datacube_list)
@@ -109,8 +111,9 @@ class ApplicationController:
         self.view.spectral_img_frame.display_spectral(self.datacube_list, self.display_band, self.slider_value)
         
         # 選択された植生指数のカラーマップ更新
-        fig = self.mul_img_model.make_colormap(self.slider_value, self.display_vegindex)
+        fig = self.colormap_visualizer.make_colormap(self.slider_value, self.display_vegindex)
         self.view.veg_index_frame.display_veg_index(fig)
+    
     
     def reflectance_conversion(self):
         """パネルウィンドウの生成とモデルの渡し"""
@@ -128,7 +131,6 @@ class PanelWindowController:
         
         """以下テスト用"""
         self.select_panelfile_path = INIT_DIR + "/test/frames/e0001_frame_ms_00113_.tif"
-        print(self.select_panelfile_path)
         self.open_panel_img()
         
         

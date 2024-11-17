@@ -7,16 +7,14 @@ class MultispectralImgModel:
     def __init__(self, imgs):
         # 初期化：画像リストとインデックスのリストを定義
         self.image_tmp_list = imgs
-        self.image_8bit_list = []
-        self.ndvi_list = []
-        self.gndvi_list = []
-        self.ndre_list = []
-        self.cigreen_list = []
+        self.image_8bit_list = self.convert_to_8bit()
+        self.datacube_list = self.create_datacube()
         
-        # 各種処理を順に実行
-        self.convert_to_8bit()
-        self.create_datacube()
-        self.calculate_indices()
+        # 植生指数の計算
+        self.ndvi_list = self.calculate_ndvi()
+        self.gndvi_list = self.calculate_gndvi()
+        self.ndre_list = self.calculate_ndre()
+        self.cigreen_list = self.calculate_cigreen()
         
         # カラーマップ表示の初期設定
         self.init_figure()
@@ -24,13 +22,13 @@ class MultispectralImgModel:
     
     def convert_to_8bit(self):
         """画像を8ビットに変換して保存"""
-        self.image_8bit_list = [img.convert('L') for img in self.image_tmp_list]
+        return [img.convert('L') for img in self.image_tmp_list]
     
     
     def create_datacube(self):
         """データキューブ（4つのバンドを持つ3次元配列）を作成"""
         band_height = int(self.image_8bit_list[0].size[1] / 4)
-        self.datacube_list = []
+        datacube_list = []
         
         for img in self.image_8bit_list:
             img_array = np.array(img)
@@ -40,17 +38,42 @@ class MultispectralImgModel:
             # データクレンジング
             datacube[np.isnan(datacube)] = 0
             datacube[datacube < 1.] = 1.
-            self.datacube_list.append(datacube)
-        return self.datacube_list
+            datacube_list.append(datacube)
+        return datacube_list
     
     
-    def calculate_indices(self):
-        """植生指数を各バンドで計算"""
-        # NDVI, CIgreen, GNDVI, NDREを計算
-        self.ndvi_list = [(dc[:, :, 3] - dc[:, :, 1]) / (dc[:, :, 3] + dc[:, :, 1]) for dc in self.datacube_list]
-        self.cigreen_list = [(dc[:, :, 3] / dc[:, :, 0]) - 1 for dc in self.datacube_list]
-        self.gndvi_list = [(dc[:, :, 3] - dc[:, :, 0]) / (dc[:, :, 3] + dc[:, :, 0]) for dc in self.datacube_list]
-        self.ndre_list = [(dc[:, :, 3] - dc[:, :, 2]) / (dc[:, :, 3] + dc[:, :, 2]) for dc in self.datacube_list]
+    def calculate_ndvi(self):
+        '''NDVI計算'''
+        return [(dc[:, :, 3] - dc[:, :, 1]) / (dc[:, :, 3] + dc[:, :, 1]) for dc in self.datacube_list]
+    
+    def calculate_gndvi(self):
+        '''GNDVI計算'''
+        return [(dc[:, :, 3] - dc[:, :, 0]) / (dc[:, :, 3] + dc[:, :, 0]) for dc in self.datacube_list]
+    
+    def calculate_ndre(self):
+        '''NDRE計算'''
+        return [(dc[:, :, 3] - dc[:, :, 2]) / (dc[:, :, 3] + dc[:, :, 2]) for dc in self.datacube_list]
+    
+    def calculate_cigreen(self):
+        '''CIgreen計算'''
+        return [(dc[:, :, 3] / dc[:, :, 0]) - 1 for dc in self.datacube_list]
+    
+    
+    def get_panel_brightness(self, panel_img, rectangle_area):
+        self.panel_img = panel_img
+        self.rectangle_area = rectangle_area
+        self.panel_brightness = []
+        
+        # 原点座標と高さ、幅を取得
+        self.start_x = self.rectangle_area[0]
+        self.start_y = self.rectangle_area[1]
+        self.end_x = self.rectangle_area[2]
+        self.end_y = self.rectangle_area[3]
+        
+        for i in range(4):
+            self.panel_band = self.panel_img.crop((self.start_x, self.start_y+(i*512), self.end_x, self.end_y+(i*512)))
+            self.panel_brightness.append(round(np.mean(self.panel_band), 2))
+        return self.panel_brightness
     
     
     def init_figure(self):
@@ -61,12 +84,31 @@ class MultispectralImgModel:
         self.ax.set_aspect('equal', adjustable='box')
         self.cbar = self.fig.colorbar(self.im, ax=self.ax, shrink=1)
         self.cbar.set_ticks(np.arange(-1, 1.1, 0.2))
+
+
+class ColormapVisualizer:
+    def __init__(self, mul_img_model):
+        self.mul_img_model = mul_img_model
+        self.init_figure()
     
+        
+    def init_figure(self):
+        """初期カラーマップ表示を設定"""
+        self.fig, self.ax = plt.subplots(figsize=(7, 7), dpi=100)
+        # 初期表示はNDVIの最初の画像を表示
+        self.im = self.ax.imshow(self.mul_img_model.ndvi_list[0], cmap='viridis', vmin=-1, vmax=1)
+        self.ax.set_aspect('equal', adjustable='box')
+        self.cbar = self.fig.colorbar(self.im, ax=self.ax, shrink=1)
+        self.cbar.set_ticks(np.arange(-1, 1.1, 0.2))
+        
     
     def make_colormap(self, slider_value, vegindex_num):
         """選択された植生指数とスライダーの値に基づいてカラーマップを更新"""
         # 植生指数とカラーマップの辞書
-        vegindex_dict = {1: self.ndvi_list, 2: self.cigreen_list, 3: self.gndvi_list, 4: self.ndre_list}
+        vegindex_dict = {1: self.mul_img_model.ndvi_list,
+                         2: self.mul_img_model.cigreen_list,
+                         3: self.mul_img_model.gndvi_list,
+                         4: self.mul_img_model.ndre_list}
         cmap_dict = {1: 'viridis', 2: 'viridis', 3: 'YlGn', 4: 'seismic'}
         
         # 選択された植生指数に応じてデータとカラーマップを更新
@@ -90,20 +132,3 @@ class MultispectralImgModel:
         """カラーバーの範囲と目盛りを設定"""
         self.im.set_clim(vmin, vmax)
         self.cbar.set_ticks(np.arange(vmin, vmax + tick_interval, tick_interval))
-        
-        
-    def get_panel_brightness(self, panel_img, rectangle_area):
-        self.panel_img = panel_img
-        self.rectangle_area = rectangle_area
-        self.panel_brightness = []
-        
-        # 原点座標と高さ、幅を取得
-        self.start_x = self.rectangle_area[0]
-        self.start_y = self.rectangle_area[1]
-        self.end_x = self.rectangle_area[2]
-        self.end_y = self.rectangle_area[3]
-        
-        for i in range(4):
-            self.panel_band = self.panel_img.crop((self.start_x, self.start_y+(i*512), self.end_x, self.end_y+(i*512)))
-            self.panel_brightness.append(round(np.mean(self.panel_band), 2))
-        return self.panel_brightness
