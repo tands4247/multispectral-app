@@ -117,7 +117,6 @@ class SpectralImgFrame(customtkinter.CTkFrame):
         self.increment_button.grid(row=2, column=2, padx=10, pady=(10, 20), sticky="w")
     
     
-    
     def display_spectral(self, datacube_list, display_band, slider_value):
         """指定されたバンドのスペクトル画像を表示"""
         datacube = datacube_list[slider_value]
@@ -129,8 +128,6 @@ class SpectralImgFrame(customtkinter.CTkFrame):
             img = (display_image - np.min(display_image)) / (np.max(display_image) - np.min(display_image))
             img = (img * 255).astype(np.uint8)
             img = Image.fromarray(img)
-        # display_image = display_image * 255
-        # img = Image.fromarray(np.uint8(display_image))
         
         # 画像を表示
         imgtk = customtkinter.CTkImage(light_image=img, dark_image=img, size=(512, 512))
@@ -160,12 +157,7 @@ class VegIndexFrame(customtkinter.CTkFrame):
         self.canvas.get_tk_widget().grid()
 
 
-'''
-ファイル選択ボタン
-パネル画像を表示
-座標指定
-バンドごとの輝度を表示
-'''    
+
 # サブウィンドウ
 class PanelWindowView(customtkinter.CTkToplevel):
     def __init__(self, master, controller):
@@ -176,7 +168,6 @@ class PanelWindowView(customtkinter.CTkToplevel):
         self.fonts = (FONT_TYPE, 17)
         
         # 配置設定
-        # self.grid_columnconfigure(2, weight=1)  # 下部に余白
         self.set_frame()
 
 
@@ -202,7 +193,7 @@ class PanelWindowView(customtkinter.CTkToplevel):
             label.grid(row=row, column=0, padx=10, pady=5, sticky='w')
             self.label_brightness.append(label)
             
-        # 事後処理
+        # 反射率変換実行
         customtkinter.CTkButton(self, text='パネル範囲決定', command=self.panel_controller.confirm_rect).place(x=280, y=680)
         
 
@@ -219,7 +210,6 @@ class PanelWindowView(customtkinter.CTkToplevel):
         
         
     def update_brightness_label(self, i, brightness):
-        # self.var_name = f"{band}_brightness"
         self.label_brightness[i].configure(text=f"{self.bands[i]}: {brightness}")
         
 

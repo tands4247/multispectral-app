@@ -55,7 +55,6 @@ class ApplicationController:
         
         # モデルの作成とデータキューブ生成
         self.mul_img_model = MultispectralImgModel(self.image_tmp_list)
-        # self.datacube_list = self.mul_img_model.datacube_list
         self.visualizer = Visualizer(self.mul_img_model)
         
         # スライダーと表示の設定
@@ -109,12 +108,6 @@ class ApplicationController:
         """現在の設定に基づいて画像とカラーマップを更新"""
         # バンド画像の表示更新
         self.view.spectral_img_frame.display_spectral(self.mul_img_model.datacube_list, self.display_band, self.slider_value)
-        # if self.slider_value == 0:
-        #     self.view.spectral_img_frame.display_spectral(self.mul_img_model.datacube_list[self.slider_value])
-        # else:
-        #     fig = self.visualizer.band_visualize(self.slider_value, self.display_band)
-        #     self.view.spectral_img_frame.display_spectral(fig)
-        
         
         # 選択された植生指数のカラーマップ更新
         fig = self.visualizer.make_colormap(self.slider_value, self.display_vegindex)

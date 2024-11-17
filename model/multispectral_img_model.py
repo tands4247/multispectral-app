@@ -10,7 +10,6 @@ class MultispectralImgModel:
         self.image_tmp_list = imgs
         self.image_8bit_list = self.convert_to_8bit()
         self.datacube_list = self.create_datacube()
-        # self.datacube_list_copy = self.datacube_list.copy()
         self.datacube_list_copy = copy.deepcopy(self.datacube_list)
         self.batch_process()        
     
