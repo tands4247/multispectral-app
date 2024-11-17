@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 import glob
 import numpy as np
 from model.multispectral_img_model import MultispectralImgModel
-from model.multispectral_img_model import ColormapVisualizer
+from model.multispectral_img_model import Visualizer
 from view.home_screen import ApplicationView
 from view.home_screen import PanelWindowView
 
@@ -55,11 +55,11 @@ class ApplicationController:
         
         # モデルの作成とデータキューブ生成
         self.mul_img_model = MultispectralImgModel(self.image_tmp_list)
-        self.datacube_list = self.mul_img_model.datacube_list
-        self.colormap_visualizer = ColormapVisualizer(self.mul_img_model)
+        # self.datacube_list = self.mul_img_model.datacube_list
+        self.visualizer = Visualizer(self.mul_img_model)
         
         # スライダーと表示の設定
-        self.img_len = len(self.datacube_list)
+        self.img_len = self.mul_img_model.get_datacube_len()
         self.view.spectral_img_frame.create_widget_slider(self.img_len)
         self.update_display()
 
@@ -108,14 +108,20 @@ class ApplicationController:
     def update_display(self):
         """現在の設定に基づいて画像とカラーマップを更新"""
         # バンド画像の表示更新
-        self.view.spectral_img_frame.display_spectral(self.datacube_list, self.display_band, self.slider_value)
+        self.view.spectral_img_frame.display_spectral(self.mul_img_model.datacube_list, self.display_band, self.slider_value)
+        # if self.slider_value == 0:
+        #     self.view.spectral_img_frame.display_spectral(self.mul_img_model.datacube_list[self.slider_value])
+        # else:
+        #     fig = self.visualizer.band_visualize(self.slider_value, self.display_band)
+        #     self.view.spectral_img_frame.display_spectral(fig)
+        
         
         # 選択された植生指数のカラーマップ更新
-        fig = self.colormap_visualizer.make_colormap(self.slider_value, self.display_vegindex)
+        fig = self.visualizer.make_colormap(self.slider_value, self.display_vegindex)
         self.view.veg_index_frame.display_veg_index(fig)
     
     
-    def reflectance_conversion(self):
+    def reflectance_event(self):
         """パネルウィンドウの生成とモデルの渡し"""
         if self.mul_img_model:
             PanelWindowController(self)
@@ -128,6 +134,7 @@ class PanelWindowController:
         # サブwindowインスタンス生成
         self.panel_view = PanelWindowView(master.view, self)
         self.mul_img_model = master.mul_img_model
+        self.app_controller = master
         
         """以下テスト用"""
         self.select_panelfile_path = INIT_DIR + "/test/frames/e0001_frame_ms_00113_.tif"
@@ -213,3 +220,5 @@ class PanelWindowController:
     def confirm_rect(self):
         if self.panel_brightness_list:
             self.panel_view.destroy()
+            self.mul_img_model.convert_to_reflectance()
+            self.app_controller.update_display()

@@ -1,23 +1,27 @@
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+import copy
 
 class MultispectralImgModel:
-    
+    is_refconvert = 0
     def __init__(self, imgs):
         # 初期化：画像リストとインデックスのリストを定義
         self.image_tmp_list = imgs
         self.image_8bit_list = self.convert_to_8bit()
         self.datacube_list = self.create_datacube()
+        # self.datacube_list_copy = self.datacube_list.copy()
+        self.datacube_list_copy = copy.deepcopy(self.datacube_list)
+        self.batch_process()        
+    
+    def batch_process(self):
+        '''一括処理 - 放射輝度値と反射率とで2回実行'''
         
         # 植生指数の計算
         self.ndvi_list = self.calculate_ndvi()
         self.gndvi_list = self.calculate_gndvi()
         self.ndre_list = self.calculate_ndre()
         self.cigreen_list = self.calculate_cigreen()
-        
-        # カラーマップ表示の初期設定
-        self.init_figure()
     
     
     def convert_to_8bit(self):
@@ -58,6 +62,8 @@ class MultispectralImgModel:
         '''CIgreen計算'''
         return [(dc[:, :, 3] / dc[:, :, 0]) - 1 for dc in self.datacube_list]
     
+    def get_datacube_len(self):
+        return len(self.datacube_list)
     
     def get_panel_brightness(self, panel_img, rectangle_area):
         self.panel_img = panel_img
@@ -76,29 +82,34 @@ class MultispectralImgModel:
         return self.panel_brightness
     
     
-    def init_figure(self):
-        """初期カラーマップ表示を設定"""
-        self.fig, self.ax = plt.subplots(figsize=(7, 7), dpi=100)
-        # 初期表示はNDVIの最初の画像を表示
-        self.im = self.ax.imshow(self.ndvi_list[0], cmap='viridis', vmin=-1, vmax=1)
-        self.ax.set_aspect('equal', adjustable='box')
-        self.cbar = self.fig.colorbar(self.im, ax=self.ax, shrink=1)
-        self.cbar.set_ticks(np.arange(-1, 1.1, 0.2))
+    def convert_to_reflectance(self):
+        '''全てのdatacube画像を放射輝度から反射率へ変換する'''
+        self.datacube_list = copy.deepcopy(self.datacube_list_copy)
+        ref_list = []   # 反射率変換されたdatacube画像を一時的に格納するリスト
+        for dc in self.datacube_list:
+            for i, value in enumerate(self.panel_brightness):
+                dc[:,:,i] = np.array((dc[:,:,i] / value) * 0.18)
+            ref_list.append(dc)
+        MultispectralImgModel.is_refconvert = 1 # 反射率変換フラグを1に
+        self.datacube_list = ref_list   # 上書き
+        
+        # 植生指数の再算出
+        self.batch_process()
 
 
-class ColormapVisualizer:
+class Visualizer:
     def __init__(self, mul_img_model):
         self.mul_img_model = mul_img_model
-        self.init_figure()
-    
+        self.cmap_init_figure()
         
-    def init_figure(self):
+        
+    def cmap_init_figure(self):
         """初期カラーマップ表示を設定"""
-        self.fig, self.ax = plt.subplots(figsize=(7, 7), dpi=100)
+        self.cmap_fig, self.cmap_ax = plt.subplots(figsize=(7, 7), dpi=100)
         # 初期表示はNDVIの最初の画像を表示
-        self.im = self.ax.imshow(self.mul_img_model.ndvi_list[0], cmap='viridis', vmin=-1, vmax=1)
-        self.ax.set_aspect('equal', adjustable='box')
-        self.cbar = self.fig.colorbar(self.im, ax=self.ax, shrink=1)
+        self.im = self.cmap_ax.imshow(self.mul_img_model.ndvi_list[0], cmap='viridis', vmin=-1, vmax=1)
+        self.cmap_ax.set_aspect('equal', adjustable='box')
+        self.cbar = self.cmap_fig.colorbar(self.im, ax=self.cmap_ax, shrink=1)
         self.cbar.set_ticks(np.arange(-1, 1.1, 0.2))
         
     
@@ -125,7 +136,7 @@ class ColormapVisualizer:
         else:
             self.set_colorbar_range(-1, 1, tick_interval=0.2)
         
-        return self.fig
+        return self.cmap_fig
     
     
     def set_colorbar_range(self, vmin, vmax, tick_interval):

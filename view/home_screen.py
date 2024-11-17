@@ -4,6 +4,8 @@ from PIL import Image, ImageTk
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+from model.multispectral_img_model import MultispectralImgModel
 
 # 定数設定
 FONT_TYPE = "meiryo"
@@ -64,7 +66,7 @@ class MenuFrame(customtkinter.CTkFrame):
         self.create_radio_buttons(vegindexs, self.radio_var_vegindex, 10, self.controller.radbutton_event_select_vegindex)
 
         # 反射率変換実行ボタン
-        self.create_button("反射率変換", 14, self.controller.reflectance_conversion)
+        self.create_button("反射率変換", 14, self.controller.reflectance_event)
         
         
     def create_button(self, text, row, command, color=None):
@@ -90,6 +92,7 @@ class SpectralImgFrame(customtkinter.CTkFrame):
         """スペクトル画像表示用フレームの初期化"""
         super().__init__(window, width=width, height=height)
         self.controller = window.controller
+        self.canvas = None
         self.image_label = customtkinter.CTkLabel(self, width=512, height=512, text="スペクトル画像",
                                                   fg_color="transparent", font=window.fonts)
         self.image_label.grid(row=0, column=0, columnspan=3, padx=10, pady=(10, 20), sticky="n")
@@ -112,12 +115,22 @@ class SpectralImgFrame(customtkinter.CTkFrame):
 
         self.increment_button = customtkinter.CTkButton(self, text='next', command=self.controller.increment_slider, width=100)
         self.increment_button.grid(row=2, column=2, padx=10, pady=(10, 20), sticky="w")
-
+    
+    
+    
     def display_spectral(self, datacube_list, display_band, slider_value):
         """指定されたバンドのスペクトル画像を表示"""
         datacube = datacube_list[slider_value]
         display_image = datacube if display_band == 5 else datacube[:, :, display_band - 1]
-        img = Image.fromarray(np.uint8(display_image))
+        
+        if MultispectralImgModel.is_refconvert == 0:    # 反射率変換前
+            img = Image.fromarray(np.uint8(display_image))
+        else:                                           # 反射率変換後
+            img = (display_image - np.min(display_image)) / (np.max(display_image) - np.min(display_image))
+            img = (img * 255).astype(np.uint8)
+            img = Image.fromarray(img)
+        # display_image = display_image * 255
+        # img = Image.fromarray(np.uint8(display_image))
         
         # 画像を表示
         imgtk = customtkinter.CTkImage(light_image=img, dark_image=img, size=(512, 512))
