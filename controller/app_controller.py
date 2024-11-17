@@ -215,3 +215,4 @@ class PanelWindowController:
             self.panel_view.destroy()
             self.mul_img_model.convert_to_reflectance()
             self.app_controller.update_display()
+            tk.messagebox.showinfo('メッセージ', '反射率に変換しました  ')
