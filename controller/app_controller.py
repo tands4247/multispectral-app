@@ -64,7 +64,8 @@ class ApplicationController:
 
     def load_images(self):
         """指定ディレクトリ内の画像を読み込む"""
-        dir_path = os.path.join(self.select_dir_path, 'frames', '*')
+        # dir_path = os.path.join(self.select_dir_path, 'frames', '*')
+        dir_path = os.path.join(self.select_dir_path, '*')
         self.images = glob.glob(dir_path)
         self.image_tmp_list = [Image.open(img) for img in self.images]
 
@@ -130,7 +131,7 @@ class PanelWindowController:
         self.app_controller = master
         
         """以下テスト用"""
-        self.select_panelfile_path = INIT_DIR + "/test/frames/e0001_frame_ms_00113_.tif"
+        # self.select_panelfile_path = INIT_DIR + "/test/frames/panel.tif"
         self.open_panel_img()
         
         

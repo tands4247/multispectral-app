@@ -106,7 +106,7 @@ class Visualizer:
         """初期カラーマップ表示を設定"""
         self.cmap_fig, self.cmap_ax = plt.subplots(figsize=(7, 7), dpi=100)
         # 初期表示はNDVIの最初の画像を表示
-        self.im = self.cmap_ax.imshow(self.mul_img_model.ndvi_list[0], cmap='viridis', vmin=-1, vmax=1)
+        self.im = self.cmap_ax.imshow(self.mul_img_model.ndvi_list[0], cmap='jet', vmin=-1, vmax=1)
         self.cmap_ax.set_aspect('equal', adjustable='box')
         self.cbar = self.cmap_fig.colorbar(self.im, ax=self.cmap_ax, shrink=1)
         self.cbar.set_ticks(np.arange(-1, 1.1, 0.2))
@@ -119,7 +119,7 @@ class Visualizer:
                          2: self.mul_img_model.cigreen_list,
                          3: self.mul_img_model.gndvi_list,
                          4: self.mul_img_model.ndre_list}
-        cmap_dict = {1: 'viridis', 2: 'viridis', 3: 'YlGn', 4: 'seismic'}
+        cmap_dict = {1: 'jet', 2: 'viridis', 3: 'YlGn', 4: 'seismic'}
         
         # 選択された植生指数に応じてデータとカラーマップを更新
         selected_index = vegindex_dict.get(vegindex_num)
